@@ -1,0 +1,25 @@
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/6-analisi/complete_E2E_workflow_analysis_CDF.pdf}
+        \caption{CDF.}
+        \label{fig:E2E_CDF}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/6-analisi/complete_E2E_workflow_analysis_PDF.pdf}
+        \caption{PDF.}
+        \label{fig:E2E_PDF}
+    \end{subfigure}
+    \caption{Distribuzioni del tempo di esecuzione E2E del workflow.}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{images/6-analisi/STPN_workflow.pdf}
+    \caption{STPN del workflow~\cite{oris21}.}
+    \label{fig:STPN_workflow}
+\end{figure}

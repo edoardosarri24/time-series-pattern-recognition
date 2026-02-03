@@ -1,0 +1,64 @@
+\chapter{Introduction}
+This project is about the C++ implementation of a program that, given a pattern (query), found the it closest sequential in a time series input. There are two implementation: the first is a sequential approach; the second use the CUDA framework to obtain the maximum speed-up.
+
+We will use two technique: in Chapter~\ref{cap:sequential} there is the sequential implementation details; in Chapter~\ref{cap:parallel} there is instead the parallel details.
+This is the repository of the project.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Approach}
+To find the best match the approach used is the sliding window: for each instance time we compute a distance between the query and the input. Afeter this we return the best part of the input that is closest to the query. If the $Q$ is the lenght of the query and $I$ is the lenght of the input, we have $I\gg Q$).
+
+The distance from the query and the input window is the the Sum of Absolute Distance (SAD). If we are at $i$-th instant time, and the query has a lenght of $M$, we compute $D(i) = \sum_{m=0}^{M-1}|Q[m]-T[i+m]|$. The objective is to find the index $i_{min}$ such that $D(i_{min})$ is minimized.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Dataset}
+We used the StarLightCurves dataset from the UCR Time Series Classification Archive. This is an astronomy dataset where the data rappresents brightness evolution of variable stars (e.g., Cepheids, RR Lyrae) over time.
+
+It is an univariate dataset where there is a single float per timestamp. Each sample have a lenght of 2024 and we have 9236 examples: concatenating the dataset samples, we can generate a continuous stream that exceeding 9 million data points.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Input and query}
+The logic pipeline to define the input and the query is the following:
+\begin{enumerate}
+    \item Database Construction \\
+        Define the 1D array compose by all StarLightCurves samples.
+    \item Synthetic Query
+        Extract a random sequence from the array. This is our query.
+    \item Noise Injection
+        We have added a Gaussian noice to the query. In the way we ensure that $SAD > 0$.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Tools}
+To validate and test our software we use two main tools: the sanitizers and the profiler.
+
+\subsection{Sanitizers}
+A sanitizer is a dynamic code analyzer integrated in the compiler that allow us to discover runtime errors in out code. The tool instruments the code to store metadata for each variable and this allow to detect runtime errors that the compiler can't see because it works in a static way.
+
+The sanitizer is useful during the development phase. In the release version we compile without the sanitizer because it introduces complexity and brings to a performance degradation.
+
+\myskip
+
+The sanitizers tool that we used are the following:
+\begin{itemize}
+    \item \textbf{Address (ASan)}: Is useful for the detection of memory corruption errors like buffer overflow, use after free and memory leak.
+    \item \textbf{Undefined (UBSan)}: Is useful for the detection of undefined behavior in the code, i.e., portion of code that isn't conformant with the standard.
+    \item \textbf{Memory (MSan)}: Detects the use of uninitialized memory. In MacOS it isn't supported, but it is present anyway.
+\end{itemize}
+
+\subsection{Profiler}
+Profiling is a technique for analysing the performance of our software: it is useful to understand where the code spends most of its time and how many functions are called.
+
+There are two techniques that profilers use: sampling, that is more efficient but less precise; instrumentation, that is very accurate but more expensive.
+
+\myskip
+
+In our project we used the \href{https://developer.ridgerun.com/wiki/index.php/Profiling_with_GPerfTools}{GPerfTools}. We install it with HomeBrew, but this doesn't install the \textit{pprof} tool for the analysis. The new version was found \href{https://github.com/google/pprof}{here}, and it is developed by Google in Go.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Execution}
+The execution of the project requires two steps:
+\begin{enumerate}
+    \item The download of the input. We have to exec the \texttt{exec/download\_input.sh} script.
+    \item Finally we can execute one the script in \texttt{exec/} folder. Which scirpt depends on our interest: see \href{https://github.com/edoardosarri24/pattern-recognition/blob/141ddd8e02e16931a092d0bbd5952677023cb8ec/README.md}{README} for more details.
+\end{enumerate}
