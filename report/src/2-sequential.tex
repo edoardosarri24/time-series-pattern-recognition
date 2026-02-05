@@ -33,8 +33,8 @@ This padding approach doesn't change the SAD distance result, but allow us to ha
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{SAD distance}
 \label{sec:seq_distance}
-The SAD metric calculation is performed using a Brute Force Sliding Window approach. If $Q$ be the query of length $M$, we search for the starting index $i^*$ that minimizes the distance: $\displaystyle i^*=\arg\max_{i\in[1,N-M]}D(i)$, where = $\displaystyle D(i)=\sum_{m=1}^{M} \sum_{d=1}^{D} |Q[m,d] - T[i+m,d]|$.
+The SAD metric calculation is performed using a Brute Force Sliding Window approach. If $Q$ be the query of length $M$, we search for the starting index $i^*$ that minimizes the distance: $\displaystyle i^*=\arg\min_{i\in[0,N-M]}D(i)$, where = $\displaystyle D(i)=\sum_{m=0}^{M} \sum_{d=0}^{D} |Q[m,d] - T[i+m,d]|$.
 
 \myskip
 
-To optimize the sequential execution, we implement an early abandoning approach: we mantain the during the computation of $D(i)$, we maintain a running sum of the distance. If at any point the partial sum exceeds the current global minimum distance found so far ($min\_dist$), the computation for the current window $i$ is immediately halted.
+To optimize the sequential execution, we implement an early abandoning approach: during the computation of $D(i)$, we maintain a the current distance; if the partial local sum exceeds the current global minimum distance found ($min\_dist$), the computation for the current window $i$ is immediately halted.

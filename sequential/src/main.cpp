@@ -5,7 +5,7 @@
 
 #include "DataLoader.hpp"
 #include "QueryGenerator.hpp"
-#include "Matcher.hpp"
+#include "SAD_distance.hpp"
 #include "common.hpp"
 
 int main(int argc, char** argv) {
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
         // Pattern matching
         auto start_match = std::chrono::high_resolution_clock::now();
-        MatchResult result = Matcher::find_best_match(data, query);
+        SADResult result = SAD_distance::find_best_match(data, query);
         auto end_match = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_match = end_match - start_match;
 

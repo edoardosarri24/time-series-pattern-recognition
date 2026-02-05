@@ -61,9 +61,6 @@ if(ENABLE_PROFILING)
     endif()
 endif()
 
-# hyperparameters.
-# set(N_GRAM_SIZE 3 CACHE STRING "Size of the n-gram")
-
 # subprojects
 add_subdirectory(sequential)
 add_subdirectory(parallel)
