@@ -1,10 +1,2 @@
 \chapter{Parallel}
 \label{cap:parallel}
-
-\subsection{Parallel Implementation (CUDA)}
-The accelerated solution leverages the massive parallelism of NVIDIA GPUs:
-\begin{itemize}
-    \item \textbf{Kernel Design:} The sliding window logic is mapped to CUDA threads. Each thread computes the SAD for a specific window index $i$.
-    \item \textbf{Memory Optimization:} The Database and Query are transferred to Global Memory. Access patterns are optimized to ensure memory coalescing.
-    \item \textbf{Parallel Reduction:} A reduction algorithm is employed to efficiently identify the global minimum SAD value across thousands of concurrent threads.
-\end{itemize}

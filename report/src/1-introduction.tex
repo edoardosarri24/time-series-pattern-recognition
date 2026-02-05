@@ -1,31 +1,32 @@
 \chapter{Introduction}
-This project is about the C++ implementation of a program that, given a pattern (query), found the it closest sequential in a time series input. There are two implementation: the first is a sequential approach; the second use the CUDA framework to obtain the maximum speed-up.
+This project is about the C++ implementation of a program that, given a pattern (i.e., a query), found the it closest sequential in a time series input. There are two implementation: the first is a sequential approach; the second use the CUDA framework to obtain the maximum speed-up.
 
 We will use two technique: in Chapter~\ref{cap:sequential} there is the sequential implementation details; in Chapter~\ref{cap:parallel} there is instead the parallel details.
-This is the repository of the project.
+
+This is the \href{https://github.com/edoardosarri24/time-series-pattern-recognition}{repository} of the project.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Approach}
 To find the best match the approach used is the sliding window: for each instance time we compute a distance between the query and the input. Afeter this we return the best part of the input that is closest to the query. If the $Q$ is the lenght of the query and $I$ is the lenght of the input, we have $I\gg Q$).
 
-The distance from the query and the input window is the the Sum of Absolute Distance (SAD). If we are at $i$-th instant time, and the query has a lenght of $M$, we compute $D(i) = \sum_{m=0}^{M-1}|Q[m]-T[i+m]|$. The objective is to find the index $i_{min}$ such that $D(i_{min})$ is minimized.
+The distance from the query and the input window is the the Sum of Absolute Distance (SAD). If we use it within univariate data, if are at $i$-th instant time, and the query has a lenght of $M$, we compute the distance as $D(i)=\displaystyle\sum_{m=0}^{M-1}|Q[m]-T[i+m]|$, where the objective is to find the index $i_{min}$ such that $D(i_{min})$ is minimized. Since we are dealing with multivariate data with $D$ dimensions, we extend the metric to sum differences across all dimensions: we compute $D(i) = \sum_{m=0}^{M-1} \sum_{k=0}^{D-1} |Q[m, k] - T[i+m, k]|$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dataset}
-We used the StarLightCurves dataset from the UCR Time Series Classification Archive. This is an astronomy dataset where the data rappresents brightness evolution of variable stars (e.g., Cepheids, RR Lyrae) over time.
+We selected the Human Activity Recognition (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions per timestamp: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
 
-It is an univariate dataset where there is a single float per timestamp. Each sample have a lenght of 2024 and we have 9236 examples: concatenating the dataset samples, we can generate a continuous stream that exceeding 9 million data points.
+The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps. In this scerio we concatenate the dataset samples to generate a continuous stream of multi-dimensional data points, resulting in a total of circa 7,9 million floating-point values to process.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Input and query}
 The logic pipeline to define the input and the query is the following:
 \begin{enumerate}
     \item Database Construction \\
-        Define the 1D array compose by all StarLightCurves samples.
-    \item Synthetic Query
-        Extract a random sequence from the array. This is our query.
-    \item Noise Injection
-        We have added a Gaussian noice to the query. In the way we ensure that $SAD > 0$.
+        Define the dataset stream composed by all HAR samples.
+    \item Synthetic Query \\
+        Extract a random subsequence from the dataset. This is our query $Q \in \mathbb{R}^{M \times d}$.
+    \item Noise Injection \\
+        We add Gaussian noise to the query values to ensure that $SAD > 0$.
 \end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,5 +61,5 @@ In our project we used the \href{https://developer.ridgerun.com/wiki/index.php/P
 The execution of the project requires two steps:
 \begin{enumerate}
     \item The download of the input. We have to exec the \texttt{exec/download\_input.sh} script.
-    \item Finally we can execute one the script in \texttt{exec/} folder. Which scirpt depends on our interest: see \href{https://github.com/edoardosarri24/pattern-recognition/blob/141ddd8e02e16931a092d0bbd5952677023cb8ec/README.md}{README} for more details.
+    \item Finally we can execute one the script in \texttt{exec/} folder. Which scirpt depends on our interest: see \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
 \end{enumerate}
