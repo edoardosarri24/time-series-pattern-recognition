@@ -19,7 +19,7 @@ cmake --build build
 
 echo "executing ($MODE)..."
 if [ "$MODE" == "par" ]; then
-    ./build/parallel/parallel_pattern_recognition
+    ./build/parallel/parallel_pattern_recognition data/input.txt
 else
-    ./build/sequential/sequential_pattern_recognition
+    ./build/sequential/sequential_pattern_recognition data/input.txt
 fi

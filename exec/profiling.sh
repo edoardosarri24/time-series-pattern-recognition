@@ -28,7 +28,7 @@ else
 fi
 
 mkdir -p "$OUT_DIR"
-CPUPROFILE=whole.prof "$TARGET"
+CPUPROFILE=whole.prof "$TARGET" data/input.txt
 "$PPROF_PATH" -top "$TARGET" whole.prof > "$OUT_DIR/profile.txt"
 "$PPROF_PATH" -pdf "$TARGET" whole.prof > "$OUT_DIR/profile.pdf"
 rm whole.prof

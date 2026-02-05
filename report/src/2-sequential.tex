@@ -9,7 +9,7 @@ The sequential pipeline is simple and linear:
     \item Data Loading \\
         We allocate memory and load in it the input file. We reorganized the data into a Array of Structures (AoS) memory pattern.
     \item Query Generation \\
-        We extract a subsequence of lenght $M$ as the query. As described in Section~\ref{sec:input}, we add to this subsequence a Gaussin noice to avoid that the SAD distance is $SAD=0$, i.e. that the query is not exactly the same of our input subsequence.
+        We extract a subsequence of lenght $M$ as the query. As described in Section~\ref{sec:input}, we add to this subsequence a Gaussin noice to avoid that the SAD distance is $SAD=0$, i.e. that the query is not exactly the same of our input subsequence. In the code there is a seed to allow the reproducibility of the code; we use the seed 78 for our experiments.
     \item Pattern Matching \\
         We use a sliding window to scan the input, calculating a SAD of lenght $M$ for each istant time.
     \item Reporting \\
