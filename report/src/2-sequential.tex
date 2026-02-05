@@ -1,2 +1,40 @@
 \chapter{Sequential}
 \label{cap:sequential}
+In this Chapter we define the structure and the implementation detail of the sequential version of our code. This baseline is usefull to study the performance differences with the parallel version described in Chapter~\ref{cap:parallel}; this analaysis will be in chapter~\ref{cap:analysis}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Pipeline}
+The sequential pipeline is simple and linear:
+\begin{enumerate}
+    \item Data Loading \\
+        We allocate memory and load in it the input file. We reorganized the data into a Array of Structures (AoS) memory pattern.
+    \item Query Generation \\
+        We extract a subsequence of lenght $M$ as the query. As described in Section~\ref{sec:input}, we add to this subsequence a Gaussin noice to avoid that the SAD distance is $SAD=0$, i.e. that the query is not exactly the same of our input subsequence.
+    \item Pattern Matching \\
+        We use a sliding window to scan the input, calculating a SAD of lenght $M$ for each istant time.
+    \item Reporting \\
+        We return the index of the best match and the relative SAD value.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Memory Layout}
+For the sequential implementation, we adopt the Array of Structures (AoS) layout. In this configuration, all $D$ dimensions of a single timestamp are stored contiguously in memory: the dataset is represented as a flat vector like $[x[1,1],\cdots,x[1,D],x[2,1], \\ \cdots,x[2,D],\cdots,x[N,1],\cdots,x[N,D]]$. If we want access to the $d$-th dimension of $t$-th timestamp element we can use $f(t,d) = buffer[t \cdot D + d]$.
+
+Since we adopt a sliding window approach, this memory patter technique allows us to maximize the spatial location during the distance calculation. The algorithm, described in Section~\ref{sec:seq_distance}, infact have a inner loop through the $D$ dimension, and a outside loop through the input lenght $N$; when we load in cache the $d$-th dimension of the $t$-th timestamp, we laod also the near values in the same cache line, and these values are processed in the next iterations.
+
+\subsection{Vectorization}
+This structure fo the data allow us to implement an auto-vectorization without writing the assembly code. With the correct compiling flags (i.e., \texttt{-march=native} and \texttt{-O3}) the compiler generate the specific instructions for the host CPU and in this way we transform the inner distance calculation loop into SIMD operations, processing multiple dimensions simultaneously.
+
+\subsection{Padding}
+Our data are a collection of float numbers and for each timestamp we have D=6 dimension; we can see the data like a $N\times D$ matrix, where $N$ is the number of elements. The cache lines are composed by 64 Byte and the CPU works better if the data are alligned with this value. Since a float is load in 4 Byte, 6 floats occupies 24 Byte; we can optimize the performance introducing two more dimension (i.e., two more floats) in the way one time stamp occupies 32 Byte in the cache line.
+
+This padding approach doesn't change the SAD distance result, but allow us to have low cache miss and also optimize the vetorization described above. On the other hand we have a waste of memory of 25\% due to padding.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{SAD distance}
+\label{sec:seq_distance}
+The SAD metric calculation is performed using a Brute Force Sliding Window approach. If $Q$ be the query of length $M$, we search for the starting index $i^*$ that minimizes the distance: $\displaystyle i^*=\arg\max_{i\in[1,N-M]}D(i)$, where = $\displaystyle D(i)=\sum_{m=1}^{M} \sum_{d=1}^{D} |Q[m,d] - T[i+m,d]|$.
+
+\myskip
+
+To optimize the sequential execution, we implement an early abandoning approach: we mantain the during the computation of $D(i)$, we maintain a running sum of the distance. If at any point the partial sum exceeds the current global minimum distance found so far ($min\_dist$), the computation for the current window $i$ is immediately halted.

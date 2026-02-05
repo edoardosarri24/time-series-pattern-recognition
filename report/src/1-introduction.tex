@@ -13,21 +13,23 @@ The distance from the query and the input window is the the Sum of Absolute Dist
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dataset}
+\label{sec:dataset}
 We selected the Human Activity Recognition (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions per timestamp: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
 
-The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps. In this scerio we concatenate the dataset samples to generate a continuous stream of multi-dimensional data points, resulting in a total of circa 7,9 million floating-point values to process.
+The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps. In this scenario we concatenate the dataset samples to generate a continuous stream of multi-dimensional data points, resulting in a total of circa 7,9 million floating-point values to process.
+
+The result of this idea is that the dataset is downloaded in \texttt{data/input.txt} file, where each samples are concatenate and each element of one sample is rappresented by a line with 6 float value (the dimension of HAR), that are respectively \textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}, \textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Input and query}
-The logic pipeline to define the input and the query is the following:
-\begin{enumerate}
-    \item Database Construction \\
-        Define the dataset stream composed by all HAR samples.
-    \item Synthetic Query \\
-        Extract a random subsequence from the dataset. This is our query $Q \in \mathbb{R}^{M \times d}$.
-    \item Noise Injection \\
-        We add Gaussian noise to the query values to ensure that $SAD > 0$.
-\end{enumerate}
+\label{sec:input}
+To define the input and the query we have to address two thinks:
+\begin{itemize}
+    \item Input \\
+        We concatenate all samples of the dataset, both the training and test partiotion. When the download script has finished the \textit{input.txt} file has the following format: each value of the same timestamp is separated from a single space; to time stamp are separated from the $\backslash$\textit{n} character.
+    \item Query \\
+        We sample a casual index of the input and take a query of Lenght $M$. The choice for the lenght of the action is $M=64$: we are evaluating 1,28 second of data and search the closest part of action in the dataset. We add to this query a Gaussian noise to ensure that $SAD > 0$. This perturbation is obtain from a Normal Distribution with $\mu=0$ and $\sigma=0,1$; this garantee the robustness of our approach.
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Tools}
