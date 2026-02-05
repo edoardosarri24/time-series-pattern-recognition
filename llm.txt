@@ -1,0 +1,266 @@
+speigami bene ifstream
+
+✦ std::ifstream è una classe della libreria standard C++ (<fstream>) progettata specificamente per la lettura di file (Input File STREAM).
+
+  Ecco i concetti chiave per capirla a fondo:
+
+  1. Astrazione dello Stream
+  In C++, l'I/O (Input/Output) è gestito tramite "stream" (flussi). Un ifstream collega il tuo programma a un file fisico sul disco e lo tratta come una sequenza
+  continua di byte o caratteri. Tu "tiri" dati fuori dallo stream.
+
+  2. Come funziona nel tuo codice
+
+   1 std::ifstream file(filename);
+   * Costruttore RAII: Quando crei l'oggetto file passando il nome, lui tenta di aprire il file. Grazie al pattern RAII (Resource Acquisition Is Initialization),
+     quando l'oggetto file esce dallo scope (alla fine della funzione), il file viene chiuso automaticamente. Non devi chiamare close() manualmente.
+
+   1 if (!file.is_open()) { ... }
+   * Verifica se l'apertura è andata a buon fine. È fondamentale perché il costruttore non lancia eccezioni di default se il file non esiste.
+
+   1 while (file >> temp_buffer[0])
+   * Operatore di estrazione (`>>`): Questa è la magia degli stream C++.
+       * Legge dal file interpretando i byte come testo.
+       * Salta automaticamente gli spazi bianchi (spazi, tab, a capo).
+       * Converte il testo ("12.34") nel tipo della variabile di destinazione (float).
+   * Valore di ritorno booleano: L'espressione file >> var restituisce un riferimento allo stream stesso. In un contesto booleano (come while(...)), lo stream
+     restituisce true se la lettura è riuscita, false se è finito il file (EOF) o c'è stato un errore di formattazione.
+
+  Perché è comodo?
+  Gestisce da solo molti dettagli noiosi:
+   * Bufferizzazione (non legge dal disco byte per byte, ma a blocchi per efficienza).
+   * Conversione di tipi (da stringa a int/float).
+   * Gestione degli errori di formato.
+
+  In sintesi: è il modo standard, sicuro e facile per leggere file in C++.
+
+> ma quindi file >> var non legge byte per byte? perché nel mio caso se deve leggere un gloat deve leggere 4 byte
+
+✦ No, non legge 4 byte grezzi. C'è una differenza fondamentale tra come un float è salvato in memoria (RAM) e come è scritto nel tuo file di testo.
+
+  1. File di Testo vs File Binario
+  Il tuo file input.txt è un file di testo (ASCII). I numeri sono scritti come sequenze di caratteri leggibili da un umano, non come bit crudi.
+
+   * Esempio nel file: Se nel file c'è scritto 3.14:
+       * Sono 4 caratteri ('3', '.', '1', '4').
+       * Occupano 4 byte su disco perché ogni carattere ASCII è 1 byte.
+   * Esempio diverso: Se c'è scritto 12345.6789:
+       * Sono 10 caratteri.
+       * Occupano 10 byte su disco.
+       * Eppure finiranno sempre dentro una variabile float che in RAM è grande 4 byte.
+
+  2. Cosa fa l'operatore >>
+  L'operatore >> agisce come un interprete/parser, non come una fotocopiatrice di byte. Ecco la procedura che esegue:
+
+   1. Salta gli spazi: Ignora spazi, tabulazioni e "a capo" iniziali.
+   2. Legge caratteri: Inizia a leggere i caratteri uno alla volta finché sono validi per un numero (cifre, il punto decimale, il segno meno, la 'e' per
+      l'esponente).
+   3. Si ferma: Appena incontra un carattere che non fa parte del numero (es. un altro spazio), si ferma.
+   4. Converte: Prende la stringa che ha letto (es. "3.14") e calcola la rappresentazione binaria IEEE 754 (i famosi 4 byte del float in memoria).
+
+  Riassunto
+   * Se usassi file.read((char*)&f, 4), leggerebbe brutalmente 4 byte binari (leggerebbe '3', '.', '1', '4' e cercherebbe di interpretarli come bit di un numero,
+     ottenendo un valore assurdo).
+   * Usando file >> f, invece, legge il testo e lo traduce nel valore numerico corretto.
+
+> come fa a sapere che deve leggere i caratteri di un numero? se avessi da leggere stringhe e non numeri?
+
+✦ È il compilatore a deciderlo in base al tipo della variabile che gli passi a destra dell'operatore >>.
+
+  In C++, l'operatore >> è sovraccaricato (overloaded). Significa che esistono tante versioni diverse della funzione >>, una per ogni tipo di dato.
+
+  Come funziona la "magia":
+
+   1. Se scrivi `file >> x` dove `x` è un `float`:
+      Il compilatore sceglie la versione della funzione che sa come parsare i numeri decimali. Questa funzione si aspetta cifre, punti, segni meno, ecc. Se
+  incontra una lettera come 'z', si ferma o segnala errore.
+
+   2. Se scrivi `file >> s` dove `s` è una `std::string`:
+      Il compilatore sceglie la versione che legge caratteri generici. Questa versione legge tutto ciò che trova fino al prossimo spazio bianco.
+
+  Esempio Pratico
+  Immagina che il tuo file contenga: ciao 123
+
+    1 float n;
+    2 std::string s;
+    3
+    4 // Caso A: Giusto
+    5 file >> s; // 's' è una stringa -> legge caratteri -> legge "ciao"
+    6 file >> n; // 'n' è un float   -> legge numeri   -> legge 123.0
+    7
+    8 // Caso B: Sbagliato
+    9 file >> n; // 'n' è un float. Il parser vede "c" (di ciao). 
+   10            // "c" non è un numero! Il flusso va in stato di errore (failbit) 
+   11            // e la lettura si blocca.
+
+  Quindi >> è "intelligente" perché si adatta al contenitore che gli fornisci.
+
+> spiegami push_back e vector
+
+✦ std::vector è probabilmente la struttura dati più importante e usata del C++. È un array dinamico.
+
+  Ecco i due concetti chiave:
+
+  1. std::vector (Il Contenitore)
+  Immaginalo come un array standard del C (float arr[100]), ma con i superpoteri:
+   * Dimensione variabile: Non devi decidere la grandezza all'inizio. Può crescere e ridursi a piacere durante l'esecuzione.
+   * Memoria contigua: Come un array normale, garantisce che tutti gli elementi siano uno dopo l'altro in memoria. Questo è cruciale per le performance (cache
+     locality) ed è richiesto dal tuo progetto (Memory Layout).
+   * Gestione automatica: Si preoccupa lui di allocare (new) e liberare (delete) la memoria. Niente più memory leak manuali.
+
+  2. push_back (L'Azione)
+  È il metodo per aggiungere elementi in coda al vettore.
+   1 data.push_back(valore);
+  Cosa succede "dietro le quinte" quando chiami push_back:
+   1. C'è spazio? Controlla se ha ancora memoria libera allocata in precedenza (la "capacity").
+   2. Sì: Scrive il valore nella prima cella libera e aumenta il contatore della dimensione (size). È velocissimo ($O(1)$).
+   3. No (Vettore pieno):
+       * Alloca un nuovo blocco di memoria più grande (solitamente il doppio dell'attuale).
+       * Copia (o sposta) tutti gli elementi vecchi nella nuova memoria.
+       * Cancella la vecchia memoria.
+       * Aggiunge il nuovo valore.
+       * Questa operazione è lenta ($O(N)$), ma capita raramente (ammortizzata).
+
+  Nel tuo codice, push_back è usato per costruire progressivamente il dataset leggendo riga per riga, senza sapere a priori quante righe ci sono.
+
+> è la cosa migliore usare i vettori automatici così? non si ha un overhead nel caso in cui il vettore si apieno?
+
+✦ Hai colto un punto cruciale di performance. Sì, il ridimensionamento automatico ha un costo (allocazione + copia dati).
+
+  Tuttavia, std::vector usa una strategia di crescita esponenziale (di solito raddoppia la capacità ogni volta). Questo rende il costo medio di push_back
+  costante ammortizzato ($O(1)$). In pratica, le riallocazioni diventano sempre più rare man mano che il vettore cresce.
+
+  È la scelta migliore qui?
+  Per la versione sequenziale (la "baseline"), l'uso semplice di push_back è accettabile e rende il codice molto leggibile. L'overhead di lettura da disco (I/O)
+  è solitamente molto superiore al tempo perso nelle riallocazioni in memoria.
+
+  Ottimizzazione Possibile: reserve()
+  Se volessimo eliminare completamente questo overhead, potremmo stimare la dimensione finale e usare reserve() prima del ciclo while.
+
+  Poiché sappiamo la dimensione del file (in byte) e sappiamo che ogni riga ha circa lo stesso numero di caratteri, potremmo fare una stima:
+
+   1 file.seekg(0, std::ios::end);
+   2 size_t fileSize = file.tellg();
+   3 file.seekg(0, std::ios::beg);
+   4
+   5 // Stima grossolana: assumiamo ~15 char per float * 6 float per riga
+   6 size_t estimatedFloats = (fileSize / 90) * constants::PADDED_DIM; 
+   7 data.reserve(estimatedFloats);
+  Con reserve, il vettore alloca subito tutta la memoria necessaria. push_back scriverà solo i valori senza mai dover riallocare/copiare.
+
+  Vuoi che aggiunga questa ottimizzazione al `DataLoader`? Non è strettamente necessaria per la correttezza, ma è "buona pratica" in HPC.
+
+> si facciamolo. nel codice commenta il significato delle operazioni
+
+✦ Ottimo. Implementerò l'ottimizzazione con reserve() basata sulla dimensione del file. Aggiungerò commenti esplicativi per ogni passaggio (spostamento cursore,
+  calcolo dimensione, stima elementi).
+
+  Procedo con la modifica di sequential/src/DataLoader.cpp.
+
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit sequential/src/DataLoader.cpp: #include "DataLoader.hpp"... => #include "DataLoader.hpp"...                                                           │
+│                                                                                                                                                               │
+│ 10       throw std::runtime_error("Could not open file: " + filename);                                                                                        │
+│ 11                                                                                                                                                            │
+│ 12   std::vector<float> data;                                                                                                                                 │
+│ 13 +                                                                                                                                                          │
+│ 14 + // Ottimizzazione: Riserviamo memoria in anticipo per evitare riallocazioni frequenti.                                                                   │
+│ 15 + // 1. Spostiamo il cursore alla fine del file per calcolarne la dimensione totale in byte.                                                               │
+│ 16 + file.seekg(0, std::ios::end);                                                                                                                            │
+│ 17 + std::streampos fileSize = file.tellg();                                                                                                                  │
+│ 18 + // 2. Riportiamo il cursore all'inizio per iniziare la lettura.                                                                                          │
+│ 19 + file.seekg(0, std::ios::beg);                                                                                                                            │
+│ 20 +                                                                                                                                                          │
+│ 21 + if (fileSize > 0) {                                                                                                                                      │
+│ 22 +     // Stima euristica del numero di righe:                                                                                                              │
+│ 23 +     // Assumiamo mediamente 15 caratteri per float (es. "-0.123456e+00 ")                                                                                │
+│ 24 +     // Ogni riga ha 6 float. Quindi ~90 byte per riga (timestamp).                                                                                       │
+│ 25 +     // Moltiplichiamo per le dimensioni paddate (8 float per timestamp) per ottenere la size del vettore.                                                │
+│ 26 +     const size_t estimated_bytes_per_row = 90;                                                                                                           │
+│ 27 +     size_t estimated_timestamps = fileSize / estimated_bytes_per_row;                                                                                    │
+│ 28 +     size_t estimated_total_floats = estimated_timestamps * constants::PADDED_DIM;                                                                        │
+│ 29 +                                                                                                                                                          │
+│ 30 +     // Riserviamo la memoria. Questo evita copie costose durante i push_back.                                                                            │
+│ 31 +     data.reserve(estimated_total_floats);                                                                                                                │
+│ 32 + }                                                                                                                                                        │
+│ 33 +                                                                                                                                                          │
+│ 34   float temp_buffer[constants::ORIGINAL_DIM];                                                                                                              │
+│ 35                                                                                                                                                            │
+│ 36   while (file >> temp_buffer[0]) { // Read the first dimension of the current timestamp.                                                                   │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ Ho applicato l'ottimizzazione con i commenti spiegati.
+
+   1. `seekg(0, std::ios::end)` / `tellg()`: Ci dà la dimensione in byte del file senza doverlo leggere tutto.
+   2. Stima: Ho usato una stima conservativa (~90 byte per riga). Anche se la stima non è perfetta, aiuta drasticamente a ridurre il numero di riallocazioni del
+      vettore (da $log_2 N$ a quasi zero).
+   3. `reserve()`: Alloca il blocco di memoria in un colpo solo.
+
+  Ora il DataLoader è più efficiente e pronto per dataset molto grandi.
+
+> che senso ha mettere i dati in un temp e poi nell'array data? non si può mettere tutto in data subito?
+
+✦ Hai colto un'altra inefficienza potenziale! La tua osservazione è corretta: stiamo copiando i dati due volte (File $\to$ temp_buffer $\to$ data).
+
+  Tuttavia, c'è un motivo "tecnico" per cui non possiamo fare semplicemente file >> data[i]:
+
+   1. Padding: La struttura in memoria (data) è diversa da quella su file.
+       * File: [D1, D2, D3, D4, D5, D6], [D1, D2, ...
+       * Memoria: [D1, D2, D3, D4, D5, D6, 0, 0], [D1, D2, ...
+      Dobbiamo inserire i due zeri di padding ogni 6 letture.
+
+   2. `push_back`: Aggiunge elementi in coda. Non possiamo scrivere direttamente "in posizione X" se quella posizione non esiste ancora (il vettore cresce man
+      mano).
+
+  Soluzione Ottimizzata
+  Possiamo però evitare il temp_buffer facendo i push_back direttamente mentre leggiamo.
+
+  Attuale:
+   1 file >> temp[0]; file >> temp[1]; ...
+   2 data.push_back(temp[0]); data.push_back(temp[1]); ...
+
+  Proposta Migliorata:
+
+    1 float val;
+    2 while (file >> val) { // Legge la prima dimensione e la mette in una var temporanea minima
+    3     data.push_back(val); // La mette subito nel vettore
+    4
+    5     // Legge e inserisce le altre 5
+    6     for (size_t i = 1; i < constants::ORIGINAL_DIM; ++i) {
+    7         if (!(file >> val)) throw ...;
+    8         data.push_back(val);
+    9     }
+   10
+   11     // Aggiunge il padding direttamente
+   12     for (size_t i = 0; i < (constants::PADDED_DIM - constants::ORIGINAL_DIM); ++i) {
+   13         data.push_back(0.0f);
+   14     }
+   15 }
+
+  In questo modo eliminiamo l'array temp_buffer e una fase di copia. Procedo con questa ottimizzazione?
+
+> perdiamo qualcosa nel fare questo?
+
+✦ Sì, perdiamo una proprietà importante: l'atomicità (o integrità) dell'inserimento.
+
+  Ecco cosa succede nel caso sfortunato di un file corrotto (es. una riga ha solo 3 numeri invece di 6):
+
+   1. Con `temp_buffer` (Codice attuale):
+       * Leggiamo i numeri nel buffer temporaneo.
+       * Se la lettura fallisce a metà (es. al 4° numero), lanciamo l'errore prima di toccare il vettore data.
+       * Risultato: Il vettore data rimane pulito e coerente (la sua dimensione è sempre un multiplo di 8).
+
+   2. Con inserimento diretto (`push_back` immediato):
+       * Leggiamo il 1° numero $\to$ push_back.
+       * Leggiamo il 2° numero $\to$ push_back.
+       * ...
+       * Errore al 4° numero! Lanciamo l'eccezione.
+       * Risultato: Il vettore data ora contiene 3 numeri "orfani". La sua struttura è disallineata (non è più multiplo di 8).
+
+  È grave?
+  Nel tuo caso specifico, no, perché lanci un'eccezione (throw) che probabilmente terminerà il programma. Quindi lo stato del vettore non importa perché il
+  programma muore.
+
+  Tuttavia, a livello di performance pura, il guadagno di rimuovere temp_buffer è trascurabile.
+   * Collo di bottiglia reale: È la funzione file >> val. Convertire caratteri ASCII ("3.1415") in binario (float) costa molto di più (centinaia di cicli CPU)
+     che copiare 24 byte (6 float) dallo stack al vettore (pochi cicli, spesso ottimizzati via registri).
+
+  Consiglio: Tieni il temp_buffer. Rende il codice più robusto logicamente e la differenza di velocità è impercettibile.

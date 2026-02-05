@@ -6,34 +6,34 @@
 
 std::vector<float> DataLoader::load(const std::string& filename) {
     std::ifstream file(filename);
-    if (!file.is_open()) {
+    if (!file.is_open())
         throw std::runtime_error("Could not open file: " + filename);
+
+    // Define the output and estimate the number of element. This reduce the reallocation of the vector when is full.
+    std::vector<float> data;
+    file.seekg(0, std::ios::end); // Move the cursor to the end.
+    std::streampos fileSize = file.tellg(); // Return the size.
+    file.seekg(0, std::ios::beg); // Move the cursor at the benning.
+    if (fileSize > 0) {
+        constexpr size_t estimated_bytes_per_row = 15 * 6; // 15 charaters for float (estimate), 6 flow for line.
+        size_t estimated_timestamps = static_cast<size_t>(fileSize) / estimated_bytes_per_row;
+        size_t estimated_total_floats = estimated_timestamps * constants::PADDED_DIM;
+        // Riserviamo la memoria. Questo evita copie costose durante i push_back.
+        data.reserve(estimated_total_floats);
     }
 
-    std::vector<float> data;
-    
-    // Reserve memory to avoid reallocations (heuristic estimation)
-    // Assuming file size / average chars per float roughly, but simple vector growth is fine for now
-    // or we could check file size. 
-    
-    float temp_buffer[constants::ORIGINAL_DIM];
-
-    while (file >> temp_buffer[0]) {
-        // Read the remaining dimensions for the current timestamp
-        for (size_t i = 1; i < constants::ORIGINAL_DIM; ++i) {
-            if (!(file >> temp_buffer[i])) {
+    // Iterate on timestamp.
+    float dimension_value;
+    while (file >> dimension_value) { // Read and push the first dimension of the current timestamp.
+        data.push_back(dimension_value);
+        for (size_t i=1; i < constants::ORIGINAL_DIM; ++i) { // Read and push the remaining dimensions of the current timestamp.
+            if (!(file >> dimension_value))
                 throw std::runtime_error("File format error: incomplete timestamp data.");
-            }
+            data.push_back(dimension_value);
         }
-
-        // Push data with padding
-        for (size_t i = 0; i < constants::ORIGINAL_DIM; ++i) {
-            data.push_back(temp_buffer[i]);
-        }
-        // Padding
-        for (size_t i = constants::ORIGINAL_DIM; i < constants::PADDED_DIM; ++i) {
+        // Push the padding.
+        for (size_t i = constants::ORIGINAL_DIM; i < constants::PADDED_DIM; ++i)
             data.push_back(0.0f);
-        }
     }
 
     return data;

@@ -4,6 +4,7 @@ import sys
 import requests
 import zipfile
 import io
+import random
 
 # Configuration
 OUTPUT_DIR = "../../data/"
@@ -18,6 +19,8 @@ SIGNALS = [
 # Functions
 def get_args():
     parser = argparse.ArgumentParser(description="Download UCI HAR data for analysis.")
+    parser.add_argument("--multiplier", type=int, default=1, help="Multiply dataset size X times by generating noisy variations (Data Augmentation).")
+    parser.add_argument("--noise", type=float, default=0.01, help="Maximum amplitude of random noise added to augmented data (default: 0.01).")
     return parser.parse_args()
 
 def load_signals(zip_ref, group):
@@ -39,37 +42,58 @@ def load_signals(zip_ref, group):
             sys.exit(1)
     return signals_data
 
-def process_group(zip_ref, group, f_out):
+def process_group(zip_ref, group, f_out, multiplier, noise_level):
     """
     Reads signals for a group, transposes them to (timestamp, dimension), and writes to f_out.
+    Applies Data Augmentation if multiplier > 1.
     """
     # Load all 6 files -> shape [6, num_samples] where each sample is a string of 128 floats
     raw_signals = load_signals(zip_ref, group)
+    
     # Check consistency
     num_samples = len(raw_signals[0])
     for i in range(1, 6):
         if len(raw_signals[i]) != num_samples:
             print(f"Error: Mismatch in sample counts for {group}. Signal 0 has {num_samples}, signal {i} has {len(raw_signals[i])}.")
             sys.exit(1)
+            
+    # Optimization: Pre-parse strings to floats once
+    # parsed_signals structure: [dim_idx][sample_idx][time_idx]
+    parsed_signals = []
+    for dim_idx in range(6):
+        dim_data = []
+        for i in range(num_samples):
+             # Split line by whitespace and convert to float
+             values = list(map(float, raw_signals[dim_idx][i].split()))
+             if len(values) != 128:
+                 print(f"Warning: Sample {i} in dimension {dim_idx} has {len(values)} timestamps instead of 128.")
+             dim_data.append(values)
+        parsed_signals.append(dim_data)
+
     total_timestamps = 0
-    # Iterate through each window/sample
-    for i in range(num_samples):
-        # Parse the 128 values for each of the 6 dimensions
-        # dims will be a list of 6 lists, each containing 128 floats
-        dims = []
-        for dim_idx in range(6):
-            # Split line by whitespace (handles multiple spaces)
-            values = list(map(float, raw_signals[dim_idx][i].split()))
-            if len(values) != 128:
-                print(f"Warning: Sample {i} in dimension {dim_idx} has {len(values)} timestamps instead of 128.")
-            dims.append(values)
-        # Now write them transposed: 128 timestamps, each with 6 values
-        # We assume all dimensions have same length (128)
-        window_len = len(dims[0])
-        for t in range(window_len):
-            row_vals = [str(dims[d][t]) for d in range(6)]
-            f_out.write(" ".join(row_vals) + "\n")
-            total_timestamps += 1
+    
+    # Generate data: Original (m=0) + Augmented variants (m > 0)
+    for m in range(multiplier):
+        # Iterate through each window/sample
+        for i in range(num_samples):
+            # We transpose: 128 timestamps, each with 6 values
+            window_len = 128
+            
+            # Access pre-parsed data for this sample across all 6 dimensions
+            # sample_dims[dim][t]
+            sample_dims = [parsed_signals[d][i] for d in range(6)]
+            
+            for t in range(window_len):
+                row_vals = []
+                for d in range(6):
+                    val = sample_dims[d][t]
+                    # Apply small random noise for augmented copies
+                    if m > 0:
+                        val += random.uniform(-noise_level, noise_level)
+                    row_vals.append(f"{val:.6f}")
+                
+                f_out.write(" ".join(row_vals) + "\n")
+                total_timestamps += 1
 
 # Main
 def main():
@@ -113,13 +137,13 @@ def main():
             sys.exit(1)
     else:
         print(f"Using cached dataset at {zip_path}")
-    print("Extracting and processing...")
+    print(f"Extracting and processing... (Multiplier: {args.multiplier}x, Noise: +/-{args.noise})")
     try:
         with zipfile.ZipFile(zip_path) as z:
             with open(output_path, "w") as f_out:
                 # Process train, then test
                 for group in GROUPS:
-                    process_group(z, group, f_out)
+                    process_group(z, group, f_out, args.multiplier, args.noise)
         print(f"Success! Dataset generated at: {output_path}")
         # Cleanup zip file
         if os.path.exists(zip_path):

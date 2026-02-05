@@ -23,12 +23,14 @@ The result of this idea is that the dataset is downloaded in \texttt{data/input.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Input and query}
 \label{sec:input}
-To define the input and the query we have to address two thinks:
+To define the input and the query we have to address two aspects:
 \begin{itemize}
     \item Input \\
         We concatenate all samples of the dataset, both the training and test partiotion. When the download script has finished the \textit{input.txt} file has the following format: each value of the same timestamp is separated from a single space; to time stamp are separated from the $\backslash$\textit{n} character.
+
+        We perform a data-augmentation process to increment the number of sample because our dataset was too small. We can define the number of copy (1 by default) and the noise added ($\pm$0.01 by default). The new sample is define as $new=old+\epsilon$, where $\epsilon\in[-0.01,0.01]$.
     \item Query \\
-        We sample a casual index of the input and take a query of Lenght $M$. The choice for the lenght of the action is $M=64$: we are evaluating 1,28 second of data and search the closest part of action in the dataset. We add to this query a Gaussian noise to ensure that $SAD > 0$. This perturbation is obtain from a Normal Distribution with $\mu=0$ and $\sigma=0,1$; this garantee the robustness of our approach.
+        We sample a casual index of the input and take a query of Lenght $M$. The choice for the lenght of the action is $M=64$: we are evaluating 1,28 second of data and search the closest part of action in the dataset. We add to this query a Gaussian noise to ensure that $SAD > 0$. This perturbation is obtain from a Normal Distribution with $\mu=0$ and $\sigma=0.1$; this garantee the robustness of our approach.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,9 +46,12 @@ The sanitizer is useful during the development phase. In the release version we 
 
 The sanitizers tool that we used are the following:
 \begin{itemize}
-    \item \textbf{Address (ASan)}: Is useful for the detection of memory corruption errors like buffer overflow, use after free and memory leak.
-    \item \textbf{Undefined (UBSan)}: Is useful for the detection of undefined behavior in the code, i.e., portion of code that isn't conformant with the standard.
-    \item \textbf{Memory (MSan)}: Detects the use of uninitialized memory. In MacOS it isn't supported, but it is present anyway.
+    \item Address (ASan) \\
+        Is useful for the detection of memory corruption errors like buffer overflow, use after free and memory leak.
+    \item Undefined (UBSan) \\
+        Is useful for the detection of undefined behavior in the code, i.e., portion of code that isn't conformant with the standard.
+    \item Memory (MSan) \\
+        Detects the use of uninitialized memory. In MacOS it isn't supported, but it is present anyway.
 \end{itemize}
 
 \subsection{Profiler}
