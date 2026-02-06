@@ -20,6 +20,12 @@ The dataset consists of 10299 samples (7352 for training and 2947 for testing). 
 
 The result of this idea is that the dataset is downloaded in \texttt{data/input.txt} file, where each samples are concatenate and each element of one sample is rappresented by a line with 6 float value (the dimension of HAR), that are respectively \textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}, \textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}.
 
+\subsection{Multiplier}
+\label{sec:multiplier}
+To address the limited size of the original dataset the system includes a data augmentation mechanism controlled by a \textit{multiplier M}.
+
+The mechanism is implemented as a pre-processing step during data download: the system iterates through the complete set of original samples \texttt{M} times; the first iteration preserves the original raw values; for every subsequent iteration required to reach the target multiplication factor, the system generates a new variation of the entire dataset, by injecting uniform random noise $\epsilon$ (by default $\epsilon\pm0.01$) into the signal values.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Input and query}
 \label{sec:input}
@@ -55,6 +61,7 @@ The sanitizers tool that we used are the following:
 \end{itemize}
 
 \subsection{Profiler}
+\label{sec:profiler}
 Profiling is a technique for analysing the performance of our software: it is useful to understand where the code spends most of its time and how many functions are called.
 
 There are two techniques that profilers use: sampling, that is more efficient but less precise; instrumentation, that is very accurate but more expensive.
@@ -68,5 +75,5 @@ In our project we used the \href{https://developer.ridgerun.com/wiki/index.php/P
 The execution of the project requires two steps:
 \begin{enumerate}
     \item The download of the input. We have to exec the \texttt{exec/download\_input.sh} script.
-    \item Finally we can execute one the script in \texttt{exec/} folder. Which scirpt depends on our interest: see \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
+    \item Finally we can execute one the script in \texttt{exec/} folder. Which script depends on our interest: see \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
 \end{enumerate}

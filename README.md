@@ -15,19 +15,20 @@ The project execution is a two-step process:
 Use the scripts in the `exec/` directory to build and run the project automatically.
 - Performance (Release):
     ```bash
-    ./exec/release_execution.sh [seq|par]
+    ./exec/release_execution.sh [seq|par] [ea]
     ```
-    Builds with `-O3 -march=native` for maximum performance. Use this for benchmarking.
+    - `ea`: Optional. Enables "Early Abandoning" optimization ONLY for the sequential version.
+    - Builds with `-O3 -march=native` for maximum performance. Use this for benchmarking.
 - Development (Debug):
     ```bash
     ./exec/debug_execution.sh [seq|par]
     ```
-    Builds with debug symbols and no optimizations. Best for debugging logic.
+    - Builds with debug symbols and no optimizations. Best for debugging logic.
 - Profiling:
     ```bash
     ./exec/profiling.sh [seq|par]
     ```
-    Builds in Release mode with profiling enabled. Generates CPU profile reports (PDF/Text) in `[sequential|parallel]/result_profiling/`.
+    - Builds in Release mode with profiling enabled. Generates CPU profile reports (PDF/Text) in `[sequential|parallel]/result_profiling/`.
 - Sanitizers (Debug):
     *   `./exec/AUBsanitizer.sh [seq|par]` - Runs with Address and Undefined Behavior Sanitizers.
     *   `./exec/Msanitizer.sh [seq|par]` - Runs with Memory Sanitizer (Linux only, requires Clang).

@@ -1,5 +1,13 @@
 project(sequential_pattern_recognition CXX)
+
+
 add_executable(sequential_pattern_recognition)
+
+# Compiler flags
+option(ENABLE_EARLY_ABANDONING "Enable early abandoning optimization" OFF)
+if(ENABLE_EARLY_ABANDONING)
+    target_compile_definitions(sequential_pattern_recognition PRIVATE ENABLE_EARLY_ABANDONING)
+endif()
 
 # sources
 target_sources(sequential_pattern_recognition PRIVATE

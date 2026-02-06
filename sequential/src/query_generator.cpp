@@ -11,7 +11,7 @@ query_generator::QueryResult query_generator::generate(const std::vector<float>&
         throw std::runtime_error("Data is smaller than query length.");
 
     // Define random generator for query index and noise.
-    std::normal_distribution<float> noise_distribution(0.0f, 0.1f);
+    std::normal_distribution<float> noise_distribution(0.0f, 0.01f);
     std::uniform_int_distribution<size_t> index_distribution(0, num_timestamps - constants::QUERY_LENGTH);
     std::mt19937 gen(seed == -1 ? std::random_device{}() : static_cast<unsigned int>(seed));
 
@@ -22,7 +22,7 @@ query_generator::QueryResult query_generator::generate(const std::vector<float>&
     for (size_t i=0; i < constants::QUERY_LENGTH; ++i) {
         size_t current_timestamp = start_index + i;
         size_t start_offset = current_timestamp * constants::PADDED_DIM;
-        // Push the real data.
+        // Push the real data plus noise.
         for (size_t d=0; d < constants::ORIGINAL_DIM; ++d) {
             float value = data[start_offset + d];
             value += noise_distribution(gen);

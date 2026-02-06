@@ -1,2 +1,29 @@
 \chapter{Analysis}
 \label{cap:analysis}
+In this Chapter we analyse the sequential code and the parallel one.
+
+The experiments were conducted using a dataset downloaded with a multiplier of 50. This scaling factor, that is described in Section~\ref{sec:multiplier} was determinated empirically and ensure that the execution time of the searching algorithm doeasn't be to much rapid.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Sequential}
+In this Section we analysis the result of the sequential versione described in Chapter~\ref{cap:sequential}.
+
+\subsection{Early Abandoning}
+\label{sec:analysis_early_abandoning}
+We tested the sequential performance with and without the Early Abandoning optimization. How we said in Section~\ref{sec:seq_earling_abandoning}, the correct baseline is with this tecnique disable.
+
+With ealing abandoning anable we obtain a circa $28\times$ speedup: the matching time, i.e. the execution time for seearching in the input file, with it is about 0.45 seconds, and without is circa 13.17 second.
+
+\subsection{Profiling}
+The profiling analysis was performed using \texttt{gperftools}, as described in Section~\ref{sec:profiler}, on the sequential implementation. This analysis reveals two distinct phases and the I/O buond:
+\begin{itemize}
+    \item Data loading: This dominates the total execution time with circa 70\%.
+    \item Pattern matching: The execution time is circa 22\% of total time.
+\end{itemize}
+
+\myskip
+
+In a real implementation we have to map the data in memory with more efficiency (e.g., using a binarization of the dataset), but for this case study the data loading exection time is not a problem: in the parallel versione we want to see that the pattern matchinig exectution time is more fast.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Parallel}

@@ -128,7 +128,6 @@ def main():
                             done = int(50 * dl / total_length)
                             sys.stdout.write(f"\r[{'=' * done}{' ' * (50-done)}] {dl//1024} KB")
                             sys.stdout.flush()
-            print("\nDownload complete.")
         except Exception as e:
             print(f"\nCritical Error during download: {e}", file=sys.stderr)
             # Clean up partial file
@@ -144,7 +143,7 @@ def main():
                 # Process train, then test
                 for group in GROUPS:
                     process_group(z, group, f_out, args.multiplier, args.noise)
-        print(f"Success! Dataset generated at: {output_path}")
+        print(f"Dataset generated at: {output_path}")
         # Cleanup zip file
         if os.path.exists(zip_path):
             os.remove(zip_path)

@@ -6,3 +6,6 @@ report/build
 report/main.pdf
 exec/script_download_input/.venv
 llm.txt
+sequential/result_profiling
+sequential/build
+parallel/result_profiling

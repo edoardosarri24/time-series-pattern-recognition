@@ -11,7 +11,7 @@ The sequential pipeline is simple and linear:
     \item Data Loading \\
         We allocate memory and load in it the input file. We reorganized the data into a Array of Structures (AoS) memory pattern. Implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/sequential_documentation/sequential/src/data_loader.cpp}{data\_loader.cpp} file.
     \item Query Generation \\
-        We extract a subsequence of lenght $M$ as the query. As described in Section~\ref{sec:input}, we add to this subsequence a Gaussin noice to avoid that the SAD distance is $SAD=0$, i.e. that the query is not exactly the same of our input subsequence. In the code there is a seed to allow the reproducibility of the code; we use the seed 78 for our experiments. The implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/sequential_documentation/sequential/src/query_generator.cpp}{query\_generator.cpp} file. This step return also the start index used for extraction.
+        We extract a subsequence of lenght $M$ as the query. As described in Section~\ref{sec:input}, we add to this subsequence a Gaussin noice ($\mu=0, \sigma=0.01$) to avoid that the SAD distance is $SAD=0$, i.e. that the query is not exactly the same of our input subsequence. In the code there is a seed to allow the reproducibility of the code; we use the seed 78 for our experiments. The implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/sequential_documentation/sequential/src/query_generator.cpp}{query\_generator.cpp} file. This step return also the start index used for extraction.
     \item Pattern Matching \\
         We use a sliding window to scan the input, calculating a SAD of lenght $M$ for each istant time. The implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/730e3003e125bb1180bfccfef96649d08320eafd/sequential/src/SAD_distance.cpp}{SAD\_distance.cpp} file.
     \item Reporting \\
@@ -37,6 +37,10 @@ This padding approach doesn't change the SAD distance result, but allow us to ha
 \label{sec:seq_distance}
 The SAD metric calculation is performed using a Brute Force Sliding Window approach. If $Q$ be the query of length $M$, we search for the starting index $i^*$ that minimizes the distance: $\displaystyle i^*=\arg\min_{i\in[0,N-M]}D(i)$, where = $\displaystyle D(i)=\sum_{m=0}^{M} \sum_{d=0}^{D} |Q[m,d] - T[i+m,d]|$.
 
-\myskip
+\subsection{Early Abandoning}
+\label{sec:seq_earling_abandoning}
+To optimize the sequential execution, we usually implement an early abandoning approach: during the computation of $D(i)$, we maintain the current distance; if the partial local sum exceeds the current global minimum distance found ($min\_dist$), the computation for the current window $i$ is immediately halted.
 
-To optimize the sequential execution, we implement an early abandoning approach: during the computation of $D(i)$, we maintain a the current distance; if the partial local sum exceeds the current global minimum distance found ($min\_dist$), the computation for the current window $i$ is immediately halted.
+However, this technique creates a significant algorithmic disparity when comparing with a parallel GPU implementation, but instead we want compare "apple with apple". On the GPU, thread divergence makes early abandoning less effective or counter-productive for this specific kernel structure. So we have parametrized it with the \texttt{ENABLE\_EARLY\_ABANDONING} compilation flag, that is \texttt{false} by default.
+
+To see this analysis go to Section~\ref{sec:analysis_early_abandoning}.

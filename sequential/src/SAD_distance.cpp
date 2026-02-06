@@ -23,9 +23,11 @@ SADResult SAD_distance::find_best_match(const std::vector<float>& data, const st
                 float diff = data[data_offset + d] - query[query_offset + d];
                 current_dist += std::abs(diff);
             }
+#ifdef ENABLE_EARLY_ABANDONING
             // Early abandoning.
             if (current_dist >= min_dist)
                 break;
+#endif
         }
         // Update the best index and the best distance.
         if (current_dist < min_dist) {
@@ -35,4 +37,21 @@ SADResult SAD_distance::find_best_match(const std::vector<float>& data, const st
     }
 
     return {best_index, min_dist};
+}
+
+float SAD_distance::compute_SAD(const std::vector<float>& data, const std::vector<float>& query, std::size_t start_index) {
+     size_t n_timestamps = data.size() / constants::PADDED_DIM;
+    if (start_index > n_timestamps - constants::QUERY_LENGTH)
+        throw std::invalid_argument("Start index out of bounds");
+
+    float current_dist = 0.0f;
+    for (size_t i=0; i < constants::QUERY_LENGTH; ++i) {
+        size_t data_offset = (start_index+i) * constants::PADDED_DIM;
+        size_t query_offset = i * constants::PADDED_DIM;
+        for (size_t d=0; d < constants::PADDED_DIM; ++d) {
+            float diff = data[data_offset + d] - query[query_offset + d];
+            current_dist += std::abs(diff);
+        }
+    }
+    return current_dist;
 }

@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
         auto end_load = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_load = end_load - start_load;
         std::cout << "Data loaded. Size: " << data.size() / constants::PADDED_DIM
-            << " timestamps. Time: " << elapsed_load.count() << "seconds\n";
+            << " timestamps. Time: " << elapsed_load.count() << " seconds\n";
 
         // Query generation
         query_generator::QueryResult query_result = query_generator::generate(data, 78);
@@ -36,11 +36,13 @@ int main(int argc, char** argv) {
         std::chrono::duration<double> elapsed_match = end_match - start_match;
 
         // Reporting
+        float ground_truth_sad = SAD_distance::compute_SAD(data, query, query_result.start_index);
         std::cout << "Best Match Found:\n";
-        std::cout << "- True index: " << query_result.start_index << "\n";
-        std::cout << "- Found index: " << result.index << "\n";
-        std::cout << "- SAD value: " << result.value << "\n";
-        std::cout << "- Matching Time: " << elapsed_match.count() << "seconds\n";
+        std::cout << "- Index query: " << query_result.start_index << "\n";
+        std::cout << "- Index founded: " << result.index << "\n";
+        std::cout << "- SAD query: " << ground_truth_sad << "\n";
+        std::cout << "- SAD founded: " << result.value << "\n";
+        std::cout << "- Matching Time: " << elapsed_match.count() << " seconds\n";
 
     } catch (const std::exception& exception) {
         std::cerr << "Error: " << exception.what() << std::endl;
