@@ -1,10 +1,10 @@
-#include "DataLoader.hpp"
+#include "data_loader.hpp"
 #include "common.hpp"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
 
-std::vector<float> DataLoader::load(const std::string& filename) {
+std::vector<float> data_loader::load(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open())
         throw std::runtime_error("Could not open file: " + filename);
@@ -22,7 +22,7 @@ std::vector<float> DataLoader::load(const std::string& filename) {
         data.reserve(estimated_total_floats);
     }
 
-    // Iterate on timestamp.
+    // Iterate through timestamp.
     float dimension_value;
     while (file >> dimension_value) { // Read and push the first dimension of the current timestamp.
         data.push_back(dimension_value);

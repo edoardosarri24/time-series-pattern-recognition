@@ -3,8 +3,8 @@
 #include <chrono>
 #include <iomanip>
 
-#include "DataLoader.hpp"
-#include "QueryGenerator.hpp"
+#include "data_loader.hpp"
+#include "query_generator.hpp"
 #include "SAD_distance.hpp"
 #include "common.hpp"
 
@@ -19,15 +19,15 @@ int main(int argc, char** argv) {
     try {
         // Data loading
         auto start_load = std::chrono::high_resolution_clock::now();
-        std::vector<float> data = DataLoader::load(input_file);
+        std::vector<float> data = data_loader::load(input_file);
         auto end_load = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_load = end_load - start_load;
         std::cout << "Data loaded. Size: " << data.size() / constants::PADDED_DIM
             << " timestamps. Time: " << elapsed_load.count() << "seconds\n";
 
         // Query generation
-        std::vector<float> query = QueryGenerator::generate(data, 78);
-        std::cout << "Query generated.\n";
+        query_generator::QueryResult query_result = query_generator::generate(data, 78);
+        std::vector<float> query = query_result.query;
 
         // Pattern matching
         auto start_match = std::chrono::high_resolution_clock::now();
@@ -37,9 +37,10 @@ int main(int argc, char** argv) {
 
         // Reporting
         std::cout << "Best Match Found:\n";
-        std::cout << "- Index: " << result.index << "\n";
-        std::cout << "- SAD: " << result.value << "\n";
-        std::cout << "- Matching Time: " << elapsed_match.count() << "s\n";
+        std::cout << "- True index: " << query_result.start_index << "\n";
+        std::cout << "- Found index: " << result.index << "\n";
+        std::cout << "- SAD value: " << result.value << "\n";
+        std::cout << "- Matching Time: " << elapsed_match.count() << "seconds\n";
 
     } catch (const std::exception& exception) {
         std::cerr << "Error: " << exception.what() << std::endl;

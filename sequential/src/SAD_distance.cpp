@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 SADResult SAD_distance::find_best_match(const std::vector<float>& data, const std::vector<float>& query) {
-    // define and check the dimensions of input and query.
+    // Define and check the dimensions of input and query.
     size_t n_timestamps = data.size() / constants::PADDED_DIM;
     if (n_timestamps < constants::QUERY_LENGTH)
         throw std::invalid_argument("Data size is smaller than query size");
@@ -16,8 +16,6 @@ SADResult SAD_distance::find_best_match(const std::vector<float>& data, const st
     // Iterate through all timestamps.
     for (size_t t=0; t <= n_timestamps - constants::QUERY_LENGTH; ++t) {
         float current_dist = 0.0f;
-
-
         for (size_t i=0; i < constants::QUERY_LENGTH; ++i) { // Compute SAD for the current window.
             size_t data_offset = (t+i) * constants::PADDED_DIM;
             size_t query_offset = i * constants::PADDED_DIM;
@@ -25,10 +23,11 @@ SADResult SAD_distance::find_best_match(const std::vector<float>& data, const st
                 float diff = data[data_offset + d] - query[query_offset + d];
                 current_dist += std::abs(diff);
             }
-            if (current_dist >= min_dist) // Early Abandoning
+            // Early abandoning.
+            if (current_dist >= min_dist)
                 break;
         }
-
+        // Update the best index and the best distance.
         if (current_dist < min_dist) {
             min_dist = current_dist;
             best_index = t;

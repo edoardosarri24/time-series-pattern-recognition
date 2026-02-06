@@ -4,8 +4,8 @@ add_executable(sequential_pattern_recognition)
 # sources
 target_sources(sequential_pattern_recognition PRIVATE
     src/main.cpp
-    src/DataLoader.cpp
-    src/QueryGenerator.cpp
+    src/data_loader.cpp
+    src/query_generator.cpp
     src/SAD_distance.cpp
 )
 

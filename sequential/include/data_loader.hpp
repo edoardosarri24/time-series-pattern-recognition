@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-namespace DataLoader {
+namespace data_loader {
     std::vector<float> load(const std::string& filename);
 }
 

@@ -5,3 +5,4 @@ data/
 report/build
 report/main.pdf
 exec/script_download_input/.venv
+llm.txt
