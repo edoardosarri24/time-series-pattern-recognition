@@ -21,9 +21,19 @@ The profiling analysis was performed using \texttt{gperftools}, as described in 
     \item Pattern matching: The execution time is circa 22\% of total time.
 \end{itemize}
 
-\myskip
+\subsection{Padding}
+\label{sec:analysis_padding}
+As we said in Section~\ref{sec:seq_padding}, we can introduce a padding to the data to alligned them with the cache line size. The experiments with and without padding show us that, in this case, introducing padding doesn't improve the efficiency of out matching algorithm: its execution time with padding is circa 13,4 seconds, but withou padding is circa 8,17 seconds.
 
-In a real implementation we have to map the data in memory with more efficiency (e.g., using a binarization of the dataset), but for this case study the data loading exection time is not a problem: in the parallel versione we want to see that the pattern matchinig exectution time is more fast.
+The motivation of this could be, in this case, the extra effort that the CPU must do to process the trash value of padding, since they are the 33\% of the real data. Apparently the cpu prefers handles it self the load in memory of the unpadded data.
+
+\subsection{Query lenght}
+If we use a longest query we will obtain a greatest execution time of the matching algorithm. We have perform three experiments:
+\begin{itemize}
+    \item \textbf{64 timestamps (deafult):} The exectuion time is circa 8.7 seconds.
+    \item \textbf{32 timestamps:} The exectuion time is circa 3.9 seconds.
+    \item \textbf{128 timetamps:} The exectuion time is circa 23 seconds.
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Parallel}

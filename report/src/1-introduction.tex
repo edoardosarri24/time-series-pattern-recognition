@@ -36,7 +36,7 @@ To define the input and the query we have to address two aspects:
 
         We perform a data-augmentation process to increment the number of sample because our dataset was too small. We can define the number of copy (1 by default) and the noise added ($\pm$0.01 by default). The new sample is define as $new=old+\epsilon$, where $\epsilon\in[-0.01,0.01]$.
     \item Query \\
-        We sample a casual index of the input and take a query of Lenght $M$. The choice for the lenght of the action is $M=64$: we are evaluating 1,28 second of data and search the closest part of action in the dataset. We add to this query a Gaussian noise to ensure that $SAD > 0$. This perturbation is obtain from a Normal Distribution with $\mu=0$ and $\sigma=0.1$; this garantee the robustness of our approach.
+        We sample a casual index of the input and take a query of Lenght $M$. The default choice for the lenght of the action is $M=64$, but it's also possible to specifie it at compilation time; by deafult we are evaluating 1,28 second of data and search the closest part of action in the dataset. We add to this query a Gaussian noise to ensure that $SAD > 0$. This perturbation is obtain from a Normal Distribution with $\mu=0$ and $\sigma=0.1$; this garantee the robustness of our approach.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

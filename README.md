@@ -15,9 +15,11 @@ The project execution is a two-step process:
 Use the scripts in the `exec/` directory to build and run the project automatically.
 - Performance (Release):
     ```bash
-    ./exec/release_execution.sh [seq|par] [ea]
+    ./exec/release_execution.sh [seq|par] [ea] [p] [q=<value>]
     ```
     - `ea`: Optional. Enables "Early Abandoning" optimization ONLY for the sequential version.
+    - `p`: Optional. Enables padding for cache alignment (default: OFF).
+    - `q=<value>`: Optional. Sets the query length (default: 64).
     - Builds with `-O3 -march=native` for maximum performance. Use this for benchmarking.
 - Development (Debug):
     ```bash
