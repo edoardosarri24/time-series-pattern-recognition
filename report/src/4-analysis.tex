@@ -25,7 +25,7 @@ The profiling analysis was performed using \texttt{gperftools}, as described in 
 \label{sec:analysis_padding}
 As we said in Section~\ref{sec:seq_padding}, we can introduce a padding to the data to alligned them with the cache line size. The experiments with and without padding show us that, in this case, introducing padding doesn't improve the efficiency of out matching algorithm: its execution time with padding is circa 13,4 seconds, but withou padding is circa 8,17 seconds.
 
-The motivation of this could be, in this case, the extra effort that the CPU must do to process the trash value of padding, since they are the 33\% of the real data. Apparently the cpu prefers handles it self the load in memory of the unpadded data.
+The motivation of this could be, in this case, the extra effort that the CPU must do to process the trash value of padding, since they are the 33\% of the real data: if we work with more and more lenght of the data, probabily the padding increase the speed of our code; in this case the cpu prefers handles it self the load in memory of the unpadded data.
 
 \subsection{Query lenght}
 If we use a longest query we will obtain a greatest execution time of the matching algorithm. We have perform three experiments:

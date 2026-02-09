@@ -34,7 +34,9 @@ For the sequential implementation, we adopt the Array of Structures (AoS) layout
 Since we adopt a sliding window approach, this memory patter technique allows us to maximize the spatial location during the distance calculation. The algorithm, described in Section~\ref{sec:seq_distance}, infact have a inner loop through the $D$ dimension, and a outside loop through the input lenght $N$; when we load in cache the $d$-th dimension of the $t$-th timestamp, we laod also the near values in the same cache line, and these values are processed in the next iterations.
 
 \subsection{Vectorization}
-This structure fo the data allow us to implement an auto-vectorization without writing the assembly code. With the correct compiling flags (i.e., \texttt{-march=native} and \texttt{-O3}) the compiler generate the specific instructions for the host CPU and in this way we transform the inner distance calculation loop into SIMD operations, processing multiple dimensions simultaneously.
+This structure of the data allows us to implement an auto-vectorization without writing assembly code. With the correct compiling flags (i.e., \texttt{-march=native} and \texttt{-O3}), the compiler generates specific instructions for the host CPU.
+
+However we have to give a hint to the compiler that we are sure that vectorializzation is possible. In particoular we have to declar \texttt{restrict} clause in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/f43737e7a58e0ead58fde8862c04cf7b19551603/sequential/src/SAD_distance.cpp}{SAD\_distance.cpp} file to unlock full SIMD operations: in this way we inform the compiler that the \texttt{data} and \texttt{query} arrays never overlap.
 
 \subsection{Padding}
 \label{sec:seq_padding}
@@ -44,6 +46,7 @@ Our data are a collection of float numbers and for each timestamp we have $D=6$ 
 This padding approach doesn't change the SAD distance result, but allow us to have low cache miss and also optimize the vetorization described above. On the other hand we have a waste of memory of 25\% due to padding. We implemented an automatic padding mechanism that adjusts the inner dimension of the dataset to be a divisor of the cache line size (typically 64 Bytes). This alignment ensures that data loads are efficient and fully utilize the memory bandwidth.
 
 \myskip
+
 The above concept is correct in teory, but the real test say us a differnt thinks. The Section~\ref{sec:analysis_padding} show these results.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

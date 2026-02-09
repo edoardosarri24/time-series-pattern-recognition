@@ -6,9 +6,10 @@ The project execution is a two-step process:
 ##### Data Download
   Before running the application, download the input dataset with the following command:
 ```bash
-./exec/download_input.sh [size_in_mb]
+./exec/download_input.sh [--multiplier <int>] [--noise <float>]
 ```
-- size_in_mb: Optional. Target size in Megabytes (default: 1024).
+- `multiplier`: Optional. Multiplies the dataset size by generating noisy variations (default: 1).
+- `noise`: Optional. Maximum amplitude of random noise added to augmented data (default: 0.01).
 - *Note:* The script checks if `data/input.txt` already exists to avoid redundant downloads.
 
 ##### Build & Run
@@ -17,10 +18,10 @@ Use the scripts in the `exec/` directory to build and run the project automatica
     ```bash
     ./exec/release_execution.sh [seq|par] [ea] [p] [q=<value>]
     ```
+    - Builds with `-O3 -march=native` for maximum performance. Use this for benchmarking.
     - `ea`: Optional. Enables "Early Abandoning" optimization ONLY for the sequential version.
     - `p`: Optional. Enables padding for cache alignment (default: OFF).
     - `q=<value>`: Optional. Sets the query length (default: 64).
-    - Builds with `-O3 -march=native` for maximum performance. Use this for benchmarking.
 - Development (Debug):
     ```bash
     ./exec/debug_execution.sh [seq|par]
