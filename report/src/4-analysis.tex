@@ -35,5 +35,8 @@ If we use a longest query we will obtain a greatest execution time of the matchi
     \item \textbf{128 timetamps:} The exectuion time is circa 23 seconds.
 \end{itemize}
 
+\subsection{Data Loading}
+The first approch for the data laoding step used the classic C++ stream. The time required for the parsing of the input text file wax approximatly 47 seconds. Whit the new memory mapped I/O approach the time is now circa 7.5 seconds.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Parallel}

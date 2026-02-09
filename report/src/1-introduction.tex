@@ -14,7 +14,7 @@ The distance from the query and the input window is the the Sum of Absolute Dist
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dataset}
 \label{sec:dataset}
-We selected the Human Activity Recognition (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions per timestamp: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
+We selected the \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition} (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions per timestamp: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
 
 The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps. In this scenario we concatenate the dataset samples to generate a continuous stream of multi-dimensional data points, resulting in a total of circa 7,9 million floating-point values to process.
 
@@ -74,6 +74,12 @@ In our project we used the \href{https://developer.ridgerun.com/wiki/index.php/P
 \section{Execution}
 The execution of the project requires two steps:
 \begin{enumerate}
-    \item The download of the input. We have to exec the \texttt{exec/download\_input.sh} script.
+    \item To download the input we have to exec the \texttt{exec/download\_input.sh} script. This Python script orchestrates the dataset preparation:
+    \begin{itemize}
+        \item Downloads the original UCI HAR Dataset (ZIP format) from the official repository.
+        \item Extracts the raw inertial signals from the archive.
+        \item Processes the data concatenating the training and test sets.
+        \item Applies the data augmentation, as we said in Section~\ref{sec:multiplier}, to generate the final \texttt{data/input.txt} file used by the C++ application.
+    \end{itemize}
     \item Finally we can execute one the script in \texttt{exec/} folder. Which script depends on our interest: see \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
 \end{enumerate}

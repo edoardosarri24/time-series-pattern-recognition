@@ -6,7 +6,7 @@ Thi version of code is in \href{https://github.com/edoardosarri24/time-series-pa
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Pipeline}
-The sequential pipeline is simple and linear:
+Supposing that the file already is in \texttt{data/input.txt}, out sequential version follow the following steps:
 \begin{enumerate}
     \item Data Loading \\
         We allocate memory and load in it the input file. We reorganized the data into a Array of Structures (AoS) memory pattern. Implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/sequential_documentation/sequential/src/data_loader.cpp}{data\_loader.cpp} file.
@@ -17,6 +17,15 @@ The sequential pipeline is simple and linear:
     \item Reporting \\
         We return the index of the best match and the relative SAD value. For verification purposes, we also display the ground truth index (the start index of the query).
 \end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Data Loading}
+\label{sec:data_loading}
+Given the large size of the input dataset ($\approx 3.5$ GB in our experiments), standard C++ streams (\texttt{std::ifstream}) introduce significant overhead due to the double coping (in the kernel memory and after in the user's buffer) and repeated system calls. To address this bottleneck, we adopt a Memory Mapped I/O (\texttt{mmap}) strategy: the file is mapped directly into the process virtual address space, allowing the application to access the file content as a contiguous byte array.
+
+In this way we increase the efficincy, but we lost the semplicity of stream parsing and we have to do all stuff by hand. To gain the optimization we must return to the pointer apporch of C.
+
+Additionally, since the parsing logic accesses memory strictly linearly, we utilize the \texttt{madvise} system call with the \texttt{MADV\_SEQUENTIAL} flag. In this way we instructs the kernel to optimized memory usage and prefetch the subsequent pages.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Memory Layout}

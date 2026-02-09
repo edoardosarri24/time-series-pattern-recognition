@@ -19,7 +19,8 @@ int main(int argc, char** argv) {
     try {
         // Data loading
         auto start_load = std::chrono::high_resolution_clock::now();
-        std::vector<float> data = data_loader::load(input_file);
+        DataLoader loader(input_file);
+        std::vector<float> data = loader.load();
         auto end_load = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_load = end_load - start_load;
         std::cout << "Data loaded. Size: " << data.size() / constants::PADDED_DIM

@@ -35,7 +35,7 @@ CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_EARLY_ABANDONING=$ENABLE_EA"
 if [[ "$ENABLE_PADDING" == "ON" ]]; then
     echo "Padding ENABLED"
 else
-    echo "Padding DISABLED (Default)"
+    echo "Padding DISABLED"
 fi
 CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_PADDING=$ENABLE_PADDING"
 
