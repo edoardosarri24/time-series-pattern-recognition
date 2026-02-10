@@ -40,6 +40,11 @@ Code is merely a translation of the documentation. If a parameter, algorithm ste
 - **Sequential Purity**: `sequential/` must not know CUDA exists.
 - **Parallel Strategy**: Document how threads map to data indices ($tid = blockIdx.x \times blockDim.x + threadIdx.x$) in the report before writing the kernel.
 
+# Execution Protocol
+- **Standard Execution**: When executing code, ALWAYS use `exec/debug_execution.sh`.
+  - **Sequential**: `exec/debug_execution.sh seq`
+  - **Parallel**: `exec/debug_execution.sh par`
+
 # Interaction Style
 - **Consultative**: Before answering, ask yourself: "Is this defined in the report?"
 - **Format**: When proposing documentation, use Markdown code blocks ready to be pasted into files.
