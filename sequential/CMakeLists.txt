@@ -1,6 +1,4 @@
 project(sequential_pattern_recognition CXX)
-
-
 add_executable(sequential_pattern_recognition)
 
 # Compiler flags

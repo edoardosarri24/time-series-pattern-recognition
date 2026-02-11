@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z "$1" ]; then
-    echo "Error: Missing argument. Usage: $0 [seq|par] [ea] [p] [q=<value>]"
+    echo "Error: Missing argument. Usage: $0 [seq|par] [ea] [p] [q=<value>] [bs=<value>]"
     exit 1
 fi
 
@@ -12,6 +12,7 @@ CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release"
 ENABLE_EA="OFF"
 ENABLE_PADDING="OFF"
 QUERY_LENGTH_VAL=64
+BLOCK_SIZE_VAL=""
 
 # Iterate over remaining arguments
 for arg in "$@"; do
@@ -21,8 +22,20 @@ for arg in "$@"; do
         ENABLE_PADDING="ON"
     elif [[ "$arg" == q=* ]]; then
         QUERY_LENGTH_VAL="${arg#*=}"
+    elif [[ "$arg" == bs=* ]]; then
+        BLOCK_SIZE_VAL="${arg#*=}"
     fi
 done
+
+# Check Block Size constraints
+if [[ -n "$BLOCK_SIZE_VAL" ]]; then
+    if [[ "$MODE" == "seq" ]]; then
+        echo "Error: Block size (bs=...) cannot be defined for sequential mode."
+        exit 1
+    fi
+    echo "Block Size: $BLOCK_SIZE_VAL"
+    CMAKE_FLAGS="$CMAKE_FLAGS -DBLOCK_SIZE=$BLOCK_SIZE_VAL"
+fi
 
 # Apply settings
 if [[ "$ENABLE_EA" == "ON" ]]; then
