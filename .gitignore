@@ -1,6 +1,5 @@
 build/
 .DS_Store
-todo.md
 data/
 report/build
 report/main.pdf

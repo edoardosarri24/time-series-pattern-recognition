@@ -1,2 +1,63 @@
 \chapter{Parallel}
 \label{cap:parallel}
+In this Chapter we analyse the choice taken for the parallel version of the program. The main goal of this version in maximise the throughtput, i.e., obtain the maximum speed-up related to the sequential version, described in Chapter~\ref{cap:sequential}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Memory Layout}
+The GPU are thinked to work with SIMT (Single Instruction, Multiple Threads) execution pattern, and this implies that the Array of Structures (AoS) doesn't match this pattern. We have to define a new layoyt of data, and the Structures of Array (SoA) match perfectly the GPU coaleshing memory access.
+
+\subsection{SoA memory pattern}
+The main problem of the AoS in the GPU is given by the warp (i.e., group of 32 thread) parallel execution: they execute the same istruction over different data. In particular, let $T$ be the linear array of data that follow the SoA memory pattern, the first thread requires in order $t_0d_0,\cdots,t_0d_5$, the second requires $t_1d_0,\cdots,t_1d_5$, and so on. If the dimension of these data are contiguous in memory, when the first thread bring the its first dimension data in memory, it bring also the the first dimension of the other threads; when these other threads searchs for their first dimension data in memory, the data will be already present.
+
+\subsection{Inline mapper equation}
+\label{sec:par_inline_equation}
+So the data are stored in a Structures of Array patter, so in a linear long array $T$ where the data related to each dimension are contigous. To define the index in this array of the d-th dimension of the $t$-th element we can use $Index(t,d)=d\cdot N+t$, where $N$ is the dimension of the datataset, i.e. the number of total timestamps.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Memory Hierarchy}
+In GPU programming is important define de memory hierarchy. The objective is minimize the data trasfer from the main global memory, which is the slower, to the thread register. We define the hierarchy as follows:
+\begin{itemize}
+    \item Global Memory \\
+        Stores the full input dataset $T$ in SoA format.
+    \item Constant Memory \\
+        Stores the Query $Q$. To ensure consistency and maximize cache efficiency, $Q$ is also stored in \textbf{SoA layout}. Since the constant memory is small (i.e., usually 64KB) the query can't be to much longht: in out case, consider the default lenght of 64 described in Section~\ref{sec:input}, we have circa 1.5 KB, so it fits easily within the 64KB constant memory limit. This garantee a huge performance benefit: we haven't to tranport the query from the global memory to the local one for each thread; all threads in a warp use the same query, so we can do a single memory transaction to have this data in the local memory.
+    \item Registers \\
+        Used for local accumulation of the SAD distance within each thread.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Grid}
+We implement a kernel where the thread $i$-th computes the SAD distance for a single sliding window starting at index $i$, so for the $i$-th timestamp.
+
+The grid that mapped each thread in its timestamp is a 1D grid with 1D blocks.
+The size of the grid depends on the number of timestamps $N$ and the number of thread $B$ for each block. We have to ensure that there are at leans one thread for each timestamp, so we can define the dimension of the grid, i.e. the number of block, as $dimGrid.x = \left\lceil \frac{N}{B} \right\rceil$.
+
+\subsection{Block Dimension}
+The critical choice is the dimension $B$ of each block.
+
+In our implementation we set by default $B = 256$, but this value can be set at compilation time. This choice is driven by:
+\begin{itemize}
+    \item Hardware: We can define at maximum 1024 thread per block.
+    \item Warp: Is a good choice set the block dimension as a multiple of 32, i.e. the number of thread for warp, the smallest chunk of thread that is allocated on cores.
+    \item Occupancy: A block of 256 is usually the default dimension that balances the number of active warps per SM.
+\end{itemize}
+
+\subsection{Index Mapping}
+The global thread index $tid$ maps directly to the time-series index $i$. The thread equation, described theorically in Section~\ref{sec:par_inline_equation}, began pratically $tid = blockIdx.x \\ \times blockDim.x + threadIdx.x$, where: \textit{blockIdx.x} defines the number of blocks previus the current thread block; \textit{blockDim.x} describes the dimension of the single block; \textit{threadIdx.x} defines the local index of the thread in the block.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Pipeline}
+The execution flow is designed to orchestrate the Host-Device collaboration, minimizing control divergence and maximizing memory throughput. The pipeline consists of the following strictly ordered stages:
+
+\begin{enumerate}
+    \item Data loading  (Host) \\
+        The Host loads the input data using the efficient Memory Mapped I/O (\texttt{mmap}) strategy, identical to the sequential version described in Section~\ref{sec:data_loading}. Since the raw file is in AoS format, the Host iterates through the mapped memory and transposes the data into the SoA layout. In this case we have to solve the paging potential problem: we have to prevent that the host OS shfit the data to the disk during the traner from the CPU memory to the GPU memory. This is addressable tanks to the pinned-memory: we have to say to the host OS that that memory cann't be pageable.
+    \item Index definition (Device) \\
+        The first step for each thread is to define the index of the timestamp on which it will work. Since we may initialize more threads than the number of timestamps, each thread must verify if its index is out of boundaries, i.e. if $tid \geq (N - M)$, where $N$ is the length of the input and $M$ of the query; in this case it must return to avoid invalid memory accesses.
+    \item Local accumulation (Device) \\
+        Each thread maintains a local register to accumulate the Sum of Absolute Differences of its related timestamp. This register resides in the fastest memory available (register file) to obtain the maximum velocity; this is possible because this information is local to the single thread. The distance is computed as $D(tid) = \sum_{d=0}^{D-1} \sum_{m=0}^{M-1} \left|Q[m, d] - T[(d \cdot N) + (tid + m)] \right|$.
+    \item Result write-back (Device) \\
+        Once the loops complete, the final accumulated \textit{sad} value is written back to Global Memory: $Output[tid] = sad$. Since $tid$ represents contiguous indices for threads in a warp, this write operation is fully coalesced.
+    \item Final reduction (Host) \\
+        After the kernel execution, the Host retrieves the Output array from Global Memory. It then performs a linear scan over the results to identify the minimum distance and the corresponding starting index $i^*$, returning the best match found.
+\end{enumerate}

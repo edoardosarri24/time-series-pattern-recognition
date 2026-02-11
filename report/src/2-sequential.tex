@@ -29,6 +29,7 @@ Additionally, since the parsing logic accesses memory strictly linearly, we util
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Memory Layout}
+\label{sec:seq_memory}
 For the sequential implementation, we adopt the Array of Structures (AoS) layout. In this configuration, all $D$ dimensions of a single timestamp are stored contiguously in memory: the dataset is represented as a flat vector like $[x[1,1],\cdots,x[1,D],x[2,1], \\ \cdots,x[2,D],\cdots,x[N,1],\cdots,x[N,D]]$. If we want access to the $d$-th dimension of $t$-th timestamp element we can use $f(t,d) = buffer[t \cdot D + d]$.
 
 Since we adopt a sliding window approach, this memory patter technique allows us to maximize the spatial location during the distance calculation. The algorithm, described in Section~\ref{sec:seq_distance}, infact have a inner loop through the $D$ dimension, and a outside loop through the input lenght $N$; when we load in cache the $d$-th dimension of the $t$-th timestamp, we laod also the near values in the same cache line, and these values are processed in the next iterations.
