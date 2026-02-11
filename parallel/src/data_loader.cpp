@@ -114,3 +114,9 @@ void DataLoader::load() {
 const std::vector<float>& DataLoader::get_aos_data() const { return aos_data_; }
 
 float* DataLoader::get_soa_pinned_data() const { return soa_pinned_data_; }
+
+size_t DataLoader::get_num_timestamps() const {
+    if (aos_data_.empty())
+        return 0;
+    return aos_data_.size() / constants::DIM;
+}

@@ -15,6 +15,7 @@ public:
     // Returns the raw AoS data (useful for query generation)
     const std::vector<float>& get_aos_data() const;
     float* get_soa_pinned_data() const;
+    size_t get_num_timestamps() const;
 
 private:
     std::string filename_;

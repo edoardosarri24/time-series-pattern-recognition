@@ -13,8 +13,9 @@ target_sources(parallel_pattern_recognition PRIVATE
     src/main.cpp
     src/data_loader.cpp
     src/query_generator.cpp
+    src/kernel.cu
 )
-set_source_files_properties(src/main.cpp PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/kernel.cu PROPERTIES LANGUAGE CUDA)
 
 # Includes
 target_include_directories(parallel_pattern_recognition PRIVATE

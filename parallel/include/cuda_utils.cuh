@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#define CHECK_CUDA(call) {
+#define CHECK_CUDA(call) { // Define allow to use compiler's flags.
     const cudaError_t error = call;
     if (error != cudaSuccess) {
         std::cerr << "CUDA Error: " << __FILE__ << ":" << __LINE__ << " "
