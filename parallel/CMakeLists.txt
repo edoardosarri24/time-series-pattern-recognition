@@ -12,6 +12,8 @@ target_compile_definitions(parallel_pattern_recognition PRIVATE BLOCK_SIZE_VAL=$
 # sources
 target_sources(parallel_pattern_recognition PRIVATE
     src/main.cpp
+    src/data_loader.cpp
+    src/query_generator.cpp
 )
 
 set_source_files_properties(src/main.cpp PROPERTIES LANGUAGE CUDA)
