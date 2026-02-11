@@ -7,7 +7,7 @@
 namespace query_generator {
 
     struct QueryResult {
-        std::vector<float> query_soa; // SoA layout: [d0m0..d0mM, d1m0..d1mM, ...]
+        std::vector<float> query_soa;
         size_t start_index;
     };
 

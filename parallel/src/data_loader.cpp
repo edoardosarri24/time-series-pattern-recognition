@@ -12,6 +12,7 @@
 #include <cstring> // for strerror
 
 namespace {
+    // Helper class for RAII handling of mmap
     class MemoryMappedFile {
     public:
         MemoryMappedFile(const std::string& filename) {
@@ -57,15 +58,13 @@ namespace {
 DataLoader::DataLoader(const std::string& filename) : filename_(filename) {}
 
 DataLoader::~DataLoader() {
-    if (soa_pinned_data_) {
+    if (soa_pinned_data_)
         cudaFreeHost(soa_pinned_data_);
-    }
 }
 
 const char* DataLoader::skip_whitespace(const char* ptr, const char* end) const {
-    while (ptr < end && std::isspace(static_cast<unsigned char>(*ptr))) {
+    while (ptr < end && std::isspace(static_cast<unsigned char>(*ptr)))
         ++ptr;
-    }
     return ptr;
 }
 
@@ -75,58 +74,43 @@ void DataLoader::load() {
         throw std::runtime_error("Input file is empty.");
 
     // Heuristic reservation
-    constexpr size_t estimated_bytes_per_row = 15 * constants::DIM;
+    constexpr size_t estimated_bytes_per_row = 15 * constants::DIM; // 15 Byte per float.
     size_t estimated_timestamps = mapped_file.size() / estimated_bytes_per_row;
     aos_data_.reserve(estimated_timestamps * constants::DIM);
 
+    // Data in AoS.
     const char* ptr = mapped_file.begin();
     const char* end = mapped_file.end();
-
     while (ptr < end) {
+        // Skip whitespace.
         ptr = skip_whitespace(ptr, end);
         if (ptr >= end) break;
-
-        for (size_t d = 0; d < constants::DIM; ++d) {
+        // Parse all dimensions.
+        for (size_t d=0; d < constants::DIM; ++d) {
             float val;
-            auto [next_ptr, ec] = std::from_chars(ptr, end, val);
-            if (ec != std::errc())
+            auto [next_ptr, error_code] = std::from_chars(ptr, end, val);
+            if (error_code != std::errc()) // Handle a different default value for the error.
                 throw std::runtime_error("File format error: failed to parse float.");
             aos_data_.push_back(val);
-            
-            // Move to next number (skip current number's chars)
-            ptr = next_ptr;
+            ptr = next_ptr; // next_prt is the ptr to the next float string start.
             // Skip space/newline to get to next number
             ptr = skip_whitespace(ptr, end);
         }
     }
 
-    num_timestamps_ = aos_data_.size() / constants::DIM;
+    // From AoS to SoA
     size_t total_elements = aos_data_.size();
-
-    // Allocate Pinned Memory for SoA
     CHECK_CUDA(cudaMallocHost(&soa_pinned_data_, total_elements * sizeof(float)));
-
-    // Transpose AoS -> SoA
-    size_t N = num_timestamps_;
+    size_t N = aos_data_.size() / constants::DIM; // Number of timestamps.
     size_t D = constants::DIM;
-
-    // SoA Index(t, d) = d * N + t
-    for (size_t t = 0; t < N; ++t) {
-        for (size_t d = 0; d < D; ++d) {
+    for (size_t t=0; t < N; ++t) {
+        for (size_t d=0; d < D; ++d) {
             float val = aos_data_[t * D + d];
             soa_pinned_data_[d * N + t] = val;
         }
     }
 }
 
-const std::vector<float>& DataLoader::get_aos_data() const {
-    return aos_data_;
-}
+const std::vector<float>& DataLoader::get_aos_data() const { return aos_data_; }
 
-float* DataLoader::get_soa_pinned_data() const {
-    return soa_pinned_data_;
-}
-
-size_t DataLoader::get_num_timestamps() const {
-    return num_timestamps_;
-}
+float* DataLoader::get_soa_pinned_data() const { return soa_pinned_data_; }

@@ -56,19 +56,18 @@ namespace {
 DataLoader::DataLoader(const std::string& filename) : filename_(filename) {}
 
 const char* DataLoader::skip_whitespace(const char* ptr, const char* end) const {
-    while (ptr < end && std::isspace(static_cast<unsigned char>(*ptr))) {
+    while (ptr < end && std::isspace(static_cast<unsigned char>(*ptr)))
         ++ptr;
-    }
     return ptr;
 }
 
 std::vector<float> DataLoader::load() {
     MemoryMappedFile mapped_file(filename_);
     if (mapped_file.size() == 0)
-        return {};
+        throw std::runtime_error("Input file is empty.");
 
-    std::vector<float> data;
     // Heuristic reservation
+    std::vector<float> data;
     constexpr size_t estimated_bytes_per_row = 15 * constants::ORIGINAL_DIM; // 15 Byte per float.
     size_t estimated_timestamps = mapped_file.size() / estimated_bytes_per_row;
     data.reserve(estimated_timestamps * constants::PADDED_DIM);
@@ -79,8 +78,7 @@ std::vector<float> DataLoader::load() {
     while (ptr < end) {
         // Skip whitespace.
         ptr = skip_whitespace(ptr, end);
-        if (ptr >= end)
-            break;
+        if (ptr >= end) break;
         // Parse first dimension.
         float val;
         auto [next_ptr, error_code] = std::from_chars(ptr, end, val);
@@ -93,7 +91,6 @@ std::vector<float> DataLoader::load() {
             ptr = skip_whitespace(ptr, end);
             if (ptr >= end)
                 throw std::runtime_error("File format error: incomplete timestamp data.");
-
             auto [next_dim_ptr, error_code_dim] = std::from_chars(ptr, end, val);
             if (error_code_dim != std::errc())
                 throw std::runtime_error("File format error: failed to parse float.");

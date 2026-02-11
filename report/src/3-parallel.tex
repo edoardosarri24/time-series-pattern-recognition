@@ -61,3 +61,17 @@ The execution flow is designed to orchestrate the Host-Device collaboration, min
     \item Final reduction (Host) \\
         After the kernel execution, the Host retrieves the Output array from Global Memory. It then performs a linear scan over the results to identify the minimum distance and the corresponding starting index $i^*$, returning the best match found.
 \end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Software Architecture}
+To ensure maintainability and separation of concerns, the parallel implementation is decoupled into a driver module and a specialized kernel module.
+
+\subsection{Kernel Module Interface}
+The kernel module encapsulates the GPU-specific logic, including the constant memory declaration and the kernel execution configuration. It exposes the following functional interface:
+
+\begin{itemize}
+    \item \texttt{pattern\_matching::update\_query\_constant(h\_query)}: A wrapper around \texttt{cudaMemcpyToSymbol} that abstracts the internal constant memory symbol, allowing the driver to update the query without direct access to device-specific variables.
+    \item \texttt{pattern\_matching::launch\_kernel(input, output, N)}: Manages the kernel launch parameters (grid and block dimensions) and execution, ensuring that the \texttt{sad\_pattern\_matching} kernel is invoked correctly.
+\end{itemize}
+
+This decoupling ensures that \texttt{main.cpp} remains focused on high-level orchestration (data I/O, memory management, and result reduction) while the CUDA-specific implementation details are isolated in a \texttt{.cu} module.

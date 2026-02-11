@@ -9,6 +9,7 @@
 #include "common.hpp"
 
 int main(int argc, char** argv) {
+    
     // Argoument check
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
