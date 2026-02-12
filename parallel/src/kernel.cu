@@ -73,8 +73,8 @@ namespace kernel {
         }
         // Result write-back.
         if (tid_local == 0) { // The best value is only in the thread 0.
-            output_values[tid_local] = shared_values[0];
-            output_idexes[tid_local] = shared_indexes[0];
+            output_values[blockIdx.x] = shared_values[0];
+            output_idexes[blockIdx.x] = shared_indexes[0];
         }
     }
 
@@ -107,7 +107,6 @@ namespace kernel {
         int block_size = constants::BLOCK_SIZE;
         // block_size multiplier that cover whole data.
         int grid_size = (int)((data_lenght + block_size - 1) / block_size);
-        printf("Launching Kernel with Grid=%d, Block=%d\n", grid_size, block_size);
         sad_pattern_matching_kernel<<<grid_size, block_size>>>(device_input, device_output_values, device_output_indexes, data_lenght);
         CHECK_CUDA(cudaGetLastError());
         CHECK_CUDA(cudaDeviceSynchronize());

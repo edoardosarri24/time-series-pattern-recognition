@@ -1,4 +1,3 @@
-project(parallel_pattern_recognition LANGUAGES CXX CUDA)
 add_executable(parallel_pattern_recognition)
 
 # Compiler flags
@@ -15,10 +14,13 @@ target_sources(parallel_pattern_recognition PRIVATE
     src/query_generator.cpp
     src/kernel.cu
 )
-set_source_files_properties(src/kernel.cu PROPERTIES LANGUAGE CUDA)
 
 # Includes
 target_include_directories(parallel_pattern_recognition PRIVATE
     include
     ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${CUDA_INCLUDE_DIRS}
 )
+
+# Link CUDA runtime
+target_link_libraries(parallel_pattern_recognition PRIVATE ${CUDA_LIBRARIES})

@@ -36,14 +36,12 @@ int main(int argc, char** argv) {
     }
     auto end_load = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_load = end_load - start_load;
-    std::cout << "Data loaded. data_lenght=" << data_lenght << std::endl;
 
     // Query generation.
     auto start_query_gen = std::chrono::high_resolution_clock::now();
     auto [query_soa, ground_truth_idx] = query_generator::generate(loader.get_aos_data(), 78);
     auto end_query_gen = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_query_gen = end_query_gen - start_query_gen;
-    std::cout << "Query generated. Ground Truth Index: " << ground_truth_idx << std::endl;
 
     // Device memory allocation.
     auto start_dev_alloc = std::chrono::high_resolution_clock::now();
@@ -98,11 +96,11 @@ int main(int argc, char** argv) {
 
     // Reporting
     std::cout << "\n--- Matching results ---\n";
+    std::cout << "Ground Truth Index: " << ground_truth_idx << std::endl;
     std::cout << "Best Match Index: " << best_index << std::endl;
     std::cout << "SAD Value: " << min_sad << std::endl;
-    std::cout << "Ground Truth Index: " << ground_truth_idx << std::endl;
     std::cout << "\n--- Timing sesults ---\n";
-    std::cout << std::fixed << std::setprecision(4);
+    std::cout << std::fixed << std::setprecision(6);
     std::cout << "Data Loading Time:          " << elapsed_load.count() << " s\n";
     std::cout << "Query Generation Time:      " << elapsed_query_gen.count() << " s\n";
     std::cout << "Device Allocation Time:     " << elapsed_dev_alloc.count() << " s\n";

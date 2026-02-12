@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
-project(pattern_recognition CXX)
+project(pattern_recognition LANGUAGES CXX CUDA)
+
+# package
+find_package(CUDA REQUIRED)
 
 # set default build type to Release if not specified.
 if(NOT CMAKE_BUILD_TYPE)
@@ -7,15 +10,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # standard C++ configuration.
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # global warnings
-add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wno-unused-parameter)
+add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wno-unused-parameter -Wno-long-long -Wno-pedantic)
 
 # performance flags.
-include(CheckIPOSupported) # optimizing in link pahse.
+include(CheckIPOSupported) # optimizing in link phase.
 check_ipo_supported(RESULT lto_supported OUTPUT error)
 
 if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
