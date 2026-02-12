@@ -22,5 +22,9 @@ target_include_directories(parallel_pattern_recognition PRIVATE
     ${CUDA_INCLUDE_DIRS}
 )
 
+if(ENABLE_PROFILING)
+    target_link_libraries(parallel_pattern_recognition PRIVATE ${PROFILING_LIBS})
+endif()
+
 # Link CUDA runtime
 target_link_libraries(parallel_pattern_recognition PRIVATE ${CUDA_LIBRARIES})

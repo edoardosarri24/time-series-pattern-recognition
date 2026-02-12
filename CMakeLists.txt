@@ -58,7 +58,7 @@ if(ENABLE_PROFILING)
     find_library(GPERFTOOLS_PROFILER profiler)
     if(GPERFTOOLS_PROFILER)
         message(STATUS "Profiling enabled: Linking against gperftools.")
-        add_link_options(${GPERFTOOLS_PROFILER})
+        set(PROFILING_LIBS ${GPERFTOOLS_PROFILER} CACHE INTERNAL "Profiler libraries")
         # Profiling needs frame pointers and symbols
         add_compile_options(-fno-omit-frame-pointer -g)
     else()

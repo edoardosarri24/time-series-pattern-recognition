@@ -2,41 +2,57 @@
 \label{cap:analysis}
 In this Chapter we analyse the sequential code and the parallel one.
 
-The experiments were conducted using a dataset downloaded with a multiplier of 50. This scaling factor, that is described in Section~\ref{sec:multiplier} was determinated empirically and ensure that the execution time of the searching algorithm doeasn't be to much rapid.
+The experiments were conducted using these settings:
+\begin{itemize}
+    \item The dataset was  downloaded with a multiplier of 50. This scaling factor, that is described in Section~\ref{sec:multiplier}, was determinated empirically and ensure that the execution time of the searching algorithm doeasn't be to much rapid. It implies that the \textit{input.txt} file has circa 3.5 GB size.
+    \item The query lenght default is 64 timestamps.
+\end{itemize}
+
+\myskip
+
+The server specific are the following:
+\begin{itemize}
+    \item Architecture: x86-64
+    \item Operating System: Ubuntu 22.04.4 LTS
+    \item Kernel: Linux 6.8.0-52-generic
+\end{itemize}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sequential}
 In this Section we analysis the result of the sequential versione described in Chapter~\ref{cap:sequential}.
 
+In the following section we analyse the detail, but in general we can say that the total execution time of the program is circa 38.8 for the default 64 query lenght and 69.4 seconds if we use a 128 query lenght.
+
 \subsection{Early Abandoning}
 \label{sec:analysis_early_abandoning}
 We tested the sequential performance with and without the Early Abandoning optimization. How we said in Section~\ref{sec:seq_earling_abandoning}, the correct baseline is with this tecnique disable.
 
-With ealing abandoning anable we obtain a circa $28\times$ speedup: the matching time, i.e. the execution time for seearching in the input file, with it is about 0.45 seconds, and without is circa 13.17 second.
+With ealing abandoning anable we obtain a circa $2.87\times$ speedup: the matching time, i.e. the execution time for seearching in the input file, with it enables is about 8.84 seconds, and without is circa 25.35 second.
 
 \subsection{Profiling}
 The profiling analysis was performed using \texttt{gperftools}, as described in Section~\ref{sec:profiler}, on the sequential implementation. This analysis reveals two distinct phases and the I/O buond:
 \begin{itemize}
-    \item Data loading: This dominates the total execution time with circa 70\%.
-    \item Pattern matching: The execution time is circa 22\% of total time.
+    \item Pattern matching: This dominates the total execution time with circa 65\%.
+    \item Data loading: The data loading execution time is circa 30\%.
 \end{itemize}
 
 \subsection{Padding}
 \label{sec:analysis_padding}
-As we said in Section~\ref{sec:seq_padding}, we can introduce a padding to the data to alligned them with the cache line size. The experiments with and without padding show us that, in this case, introducing padding doesn't improve the efficiency of out matching algorithm: its execution time with padding is circa 13,4 seconds, but withou padding is circa 8,17 seconds.
+As we said in Section~\ref{sec:seq_padding}, we can introduce a padding to the data to alligned them with the cache line size. The experiments with and without padding show us that, in this case, introducing padding doesn't improve the efficiency of out matching algorithm: its execution time with padding is circa 35.8 seconds, but withou padding is circa 26.4 seconds.
 
 The motivation of this could be, in this case, the extra effort that the CPU must do to process the trash value of padding, since they are the 33\% of the real data: if we work with more and more lenght of the data, probabily the padding increase the speed of our code; in this case the cpu prefers handles it self the load in memory of the unpadded data.
 
 \subsection{Query lenght}
 If we use a longest query we will obtain a greatest execution time of the matching algorithm. We have perform three experiments:
 \begin{itemize}
-    \item \textbf{64 timestamps (deafult):} The exectuion time is circa 8.7 seconds.
-    \item \textbf{32 timestamps:} The exectuion time is circa 3.9 seconds.
-    \item \textbf{128 timetamps:} The exectuion time is circa 23 seconds.
+    \item \textbf{64 timestamps (deafult):} The exectuion time is circa 26.2 seconds.
+    \item \textbf{32 timestamps:} The exectuion time is circa 10.4 seconds.
+    \item \textbf{128 timetamps:} The exectuion time is circa 56.3 seconds.
 \end{itemize}
 
 \subsection{Data Loading}
-The first approch for the data laoding step used the classic C++ stream. The time required for the parsing of the input text file wax approximatly 47 seconds. Whit the new memory mapped I/O approach the time is now circa 7.5 seconds.
+The first approch for the data laoding step used the classic C++ stream. The time required for the parsing of the input text file wax approximatly 47 seconds. Whit the new memory mapped I/O approach the time is now circa 13.32 seconds.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Parallel}

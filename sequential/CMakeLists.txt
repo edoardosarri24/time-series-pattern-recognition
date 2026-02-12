@@ -28,3 +28,8 @@ target_include_directories(sequential_pattern_recognition PRIVATE
     include
     ${CMAKE_CURRENT_BINARY_DIR}/include
 )
+
+if(ENABLE_PROFILING)
+    message(STATUS "Sequential: Profiling enabled. Linking against ${PROFILING_LIBS}")
+    target_link_libraries(sequential_pattern_recognition PRIVATE "-Wl,--no-as-needed" ${PROFILING_LIBS} "-Wl,--as-needed")
+endif()

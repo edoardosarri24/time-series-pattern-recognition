@@ -9,7 +9,7 @@
 #include "common.hpp"
 
 int main(int argc, char** argv) {
-    
+
     // Argoument check
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
@@ -18,6 +18,8 @@ int main(int argc, char** argv) {
     std::string input_file = argv[1];
 
     try {
+        auto start_total = std::chrono::high_resolution_clock::now();
+
         // Data loading
         auto start_load = std::chrono::high_resolution_clock::now();
         DataLoader loader(input_file);
@@ -36,6 +38,7 @@ int main(int argc, char** argv) {
         SADResult result = SAD_distance::find_best_match(data, query);
         auto end_match = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_match = end_match - start_match;
+        auto end_total = std::chrono::high_resolution_clock::now();
 
         // Reporting
         float ground_truth_sad = SAD_distance::compute_SAD(data, query, query_result.start_index);
@@ -45,6 +48,8 @@ int main(int argc, char** argv) {
         std::cout << "- SAD query: " << ground_truth_sad << "\n";
         std::cout << "- SAD founded: " << result.value << "\n";
         std::cout << "- Matching Time: " << elapsed_match.count() << " seconds\n";
+        std::chrono::duration<double> elapsed_total = end_total - start_total;
+        std::cout << "- Total Time: " << elapsed_total.count() << " seconds\n";
 
     } catch (const std::exception& exception) {
         std::cerr << "Error: " << exception.what() << std::endl;
