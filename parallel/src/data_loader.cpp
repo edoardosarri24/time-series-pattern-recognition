@@ -101,12 +101,11 @@ void DataLoader::load() {
     // From AoS to SoA
     size_t total_elements = aos_data_.size();
     CHECK_CUDA(cudaMallocHost(&soa_pinned_data_, total_elements * sizeof(float)));
-    size_t N = aos_data_.size() / constants::DIM; // Number of timestamps.
-    size_t D = constants::DIM;
-    for (size_t t=0; t < N; ++t) {
-        for (size_t d=0; d < D; ++d) {
-            float val = aos_data_[t * D + d];
-            soa_pinned_data_[d * N + t] = val;
+    size_t data_lenght = aos_data_.size() / constants::DIM; // Number of timestamps.
+    for (size_t t=0; t < data_lenght; ++t) {
+        for (size_t d=0; d < constants::DIM; ++d) {
+            float val = aos_data_[t * constants::DIM + d];
+            soa_pinned_data_[d * data_lenght + t] = val;
         }
     }
 }

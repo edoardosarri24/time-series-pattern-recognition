@@ -47,12 +47,18 @@ int main(int argc, char** argv) {
 
     // Device memory allocation.
     auto start_dev_alloc = std::chrono::high_resolution_clock::now();
-    float* device_input = nullptr; // Input GPU memory.
-    float* device_output = nullptr; // Output GPU memory.
+    float* device_input = nullptr;
+
+    // Allocate reduced output buffers.
+    size_t grid_size = (data_lenght + constants::BLOCK_SIZE - 1) / constants::BLOCK_SIZE;
+    float* device_output_values = nullptr;
+    int* device_output_indexes = nullptr;
     size_t input_size = data_lenght * constants::DIM * sizeof(float);
-    size_t output_size = data_lenght * sizeof(float);
+    size_t output_values_size = grid_size * sizeof(float);
+    size_t output_indexes_size = grid_size * sizeof(int);
     CHECK_CUDA(cudaMalloc(&device_input, input_size));
-    CHECK_CUDA(cudaMalloc(&device_output, output_size));
+    CHECK_CUDA(cudaMalloc(&device_output_values, output_values_size));
+    CHECK_CUDA(cudaMalloc(&device_output_indexes, output_indexes_size));
     auto end_dev_alloc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_dev_alloc = end_dev_alloc - start_dev_alloc;
 
@@ -65,14 +71,15 @@ int main(int argc, char** argv) {
 
     // Kernel execution.
     auto start_kernel_exec = std::chrono::high_resolution_clock::now();
-    kernel::launch_sad_pattern_matching(device_input, device_output, data_lenght);
+    kernel::launch_sad_pattern_matching(device_input, device_output_values, device_output_indexes, data_lenght);
     auto end_kernel_exec = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_kernel_exec = end_kernel_exec - start_kernel_exec;
 
     // Result transfer (Device to Host).
     auto start_d2h_transfer = std::chrono::high_resolution_clock::now();
-    std::vector<float> host_result(data_lenght);
-    kernel::download_output_from_global_memory(host_result, device_output, output_size);
+    std::vector<float> host_vals(grid_size);
+    std::vector<int> host_idxs(grid_size);
+    kernel::download_results_to_host_memory(host_vals, device_output_values, host_idxs, device_output_indexes, grid_size);
     auto end_d2h_transfer = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_d2h_transfer = end_d2h_transfer - start_d2h_transfer;
 
@@ -80,11 +87,10 @@ int main(int argc, char** argv) {
     auto start_host_reduction = std::chrono::high_resolution_clock::now();
     float min_sad = std::numeric_limits<float>::max();
     size_t best_index = 0;
-    size_t valid_range = data_lenght - constants::QUERY_LENGTH;
-    for (size_t i=0; i <= valid_range; ++i) {
-        if (host_result[i] < min_sad) {
-            min_sad = host_result[i];
-            best_index = i;
+    for (size_t i=0; i < grid_size; ++i) {
+        if (host_vals[i] < min_sad) {
+            min_sad = host_vals[i];
+            best_index = host_idxs[i];
         }
     }
     auto end_host_reduction = std::chrono::high_resolution_clock::now();
@@ -110,6 +116,7 @@ int main(int argc, char** argv) {
 
     // Cleanup
     CHECK_CUDA(cudaFree(device_input));
-    CHECK_CUDA(cudaFree(device_output));
+    CHECK_CUDA(cudaFree(device_output_values));
+    CHECK_CUDA(cudaFree(device_output_indexes));
     return EXIT_SUCCESS;
 }
