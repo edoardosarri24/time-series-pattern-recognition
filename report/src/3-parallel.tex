@@ -23,7 +23,12 @@ In GPU programming is important define de memory hierarchy. The objective is min
     \item Constant Memory \\
         Stores the Query $Q$. To ensure consistency and maximize cache efficiency, $Q$ is also stored in \textbf{SoA layout}. Since the constant memory is small (i.e., usually 64KB) the query can't be to much longht: in out case, consider the default lenght of 64 described in Section~\ref{sec:input}, we have circa 1.5 KB, so it fits easily within the 64KB constant memory limit. This garantee a huge performance benefit: we haven't to tranport the query from the global memory to the local one for each thread; all threads in a warp use the same query, so we can do a single memory transaction to have this data in the local memory.
     \item Shared Memory \\
-        Stores the partial results of the threads within a block. This memory is much faster than the global memory and allows threads to cooperate. We use it to perform a block-wise reduction, finding the minimum SAD value among the threads in the same block.
+        This memory is much faster than the global memory and allows threads to cooperate. We use it to perform a block-wise reduction and to implment a tiling strategy:
+        \begin{itemize}
+            \item Tiling: Stores a "tile" of the input data corresponding to the block's sliding window range. This allows threads to read input data from fast on-chip memory instead of Global Memory, reducing global memory accesses by a factor of circa $\times query\_lenght$.
+            \item Reduction: Stores the partial SAD results to perform the block-wise parallel reduction efficiently.
+        \end{itemize}
+        The total shared memory usage per block is approximately 3.25 KB (Reduction: $256 \times 8B$ + Tiling: $319 \times 4B$), which is well below the hardware limit (typically 48 KB per SM), ensuring high occupancy.
     \item Registers \\
         Used for local accumulation of the SAD distance within each thread.
 \end{itemize}
@@ -31,14 +36,13 @@ In GPU programming is important define de memory hierarchy. The objective is min
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Pipeline}
 The execution flow is designed to orchestrate the Host-Device collaboration, minimizing control divergence and maximizing memory throughput. The pipeline consists of the following strictly ordered stages:
-
 \begin{enumerate}
     \item Data loading  (Host) \\
         The Host loads the input data using the efficient Memory Mapped I/O (\texttt{mmap}) strategy, identical to the sequential version described in Section~\ref{sec:data_loading}. Since the raw file is in AoS format, the Host iterates through the mapped memory and transposes the data into the SoA layout. In this case we also have to solve the paging potential problem: we have to prevent that the host OS shfit the data to the disk during the traner from the CPU memory to the GPU memory. This is addressable tanks to the pinned-memory: we have to say to the host OS that that memory cann't be pageable.
     \item Index definition (Device) \\
         The first step for each thread is to define the index of the timestamp on which it will work. Since we may initialize more threads than the number of timestamps, each thread must verify if its index is out of boundaries, i.e. if $tid \geq (N - M)$, where $N$ is the length of the input and $M$ of the query.
     \item Local accumulation (Device) \\
-        Each thread accumulates in a local register the Sum of Absolute Differences of its related timestamp. This register resides in the fastest memory available (register file) to obtain the maximum velocity; this is possible because this information is local to the single thread. The distance is computed as $D(tid) = \sum_{d=0}^{D-1} \sum_{m=0}^{M-1} \left|Q[m, d] - T[(d \cdot N) + (tid + m)] \right|$. As we said in Section~\ref{sec:par_memory}, the query is retrived from the constant memory and the data from the global memory.
+        Each thread accumulates in a local register the Sum of Absolute Differences of its related timestamp; this register resides in the fastest memory available (i.e., register file). As we said in Section~\ref{sec:par_memory}, the query is retrived from the constant memory and, to minimize global memory latency, the data from the shared memory using a tiling strategy. For the tiling all threads in a block cooperate to load the required input segment from Global Memory into Shared Memory. The tile has $block\_size + query\_length - 1$ size. The distance is computed as $D(tid) = \sum_{d=0}^{D-1} \sum_{m=0}^{M-1} \left|Q[m, d] - T_{shared}[tid_{local} + m] \right|$.
     \item Block Reduction (Device) \\
         This is the critical optimization step: writing every thread's result to Global Memory isn't efficint since the global memory is the slower memory and implies the transfer of all data from the global memory to the host memory, and we3 know that the PCI bus is the main bottleneck. To avoid this problems we perform a block-grain reduction: we define the best index $i_j^*$ for each block $j$ usgin the shared memory and the reduction pattern; in this way we have to bring in host memory only \textit{grid\_size} value, reducing the data transfer fo a \textit{block\_dim} factor. With the reduction we have a $\mathcal{O}{(\log(block\_size))}$ cost instead a linear cost is we performe the reduction sequentially in cpu. In this scenario i critical the coice of the \textit{block\_size} value.
     \item Result write-back (Device) \\

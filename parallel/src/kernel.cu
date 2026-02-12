@@ -13,24 +13,49 @@ namespace kernel {
             float* __restrict__ output_values,
             int* __restrict__ output_idexes,
             size_t data_lenght) {
-        // Shared memory mllocation.
+        // Output and tiling shared memory allocation.
         __shared__ float shared_values[constants::BLOCK_SIZE];
         __shared__ int shared_indexes[constants::BLOCK_SIZE];
+        constexpr int TILE_SIZE = constants::BLOCK_SIZE + constants::QUERY_LENGTH - 1;
+        __shared__ float tile[TILE_SIZE];
+
         // Local accumulation.
         size_t tid = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
         unsigned int tid_local = threadIdx.x;
-        float sad = FLT_MAX; // For the thread out of boundaries
-        if (tid <= data_lenght - constants::QUERY_LENGTH) {
+        float sad = FLT_MAX;
+        bool valid_thread = tid <= data_lenght - constants::QUERY_LENGTH;
+        if (valid_thread)
             sad = 0.0f;
-            for (size_t d=0; d < constants::DIM; ++d) {
+        // Loading tile into shared memory.
+        for (size_t d=0; d < constants::DIM; ++d) {
+            size_t block_base_indexes = (size_t)blockIdx.x * blockDim.x;
+            size_t input_dim_base = d * data_lenght;
+            // Each thread load only its related value.
+            if (block_base_indexes + tid_local < data_lenght) {
+                tile[tid_local] = input[input_dim_base + block_base_indexes + tid_local];
+            } else {
+                tile[tid_local] = 0.0f; // Padding
+            }
+            // The first QUERY_LENGTH-1 thread load also the extra elements for the last thread.
+            if (tid_local < constants::QUERY_LENGTH - 1) {
+                size_t halo_idx = block_base_indexes + constants::BLOCK_SIZE + tid_local;
+                if (halo_idx < data_lenght) {
+                    tile[constants::BLOCK_SIZE + tid_local] = input[input_dim_base + halo_idx];
+                } else {
+                    tile[constants::BLOCK_SIZE + tid_local] = 0.0f; // Padding
+                }
+            }
+            __syncthreads();
+            // Compute SAD for this dimension using shared memory
+            if (valid_thread) {
                 size_t query_base = d * constants::QUERY_LENGTH;
-                size_t input_base = d * data_lenght + tid;
                 for (size_t m=0; m < constants::QUERY_LENGTH; ++m) {
                     float q_val = query[query_base + m];
-                    float in_val = input[input_base + m];
+                    float in_val = tile[tid_local + m];
                     sad += fabsf(q_val - in_val);
                 }
             }
+            __syncthreads();
         }
         // Load each value into shared memory.
         shared_values[tid_local] = sad;
