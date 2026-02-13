@@ -1,0 +1,49 @@
+\section{Introduction}
+
+\begin{frame}{Introduction}
+    \begin{block}{Obiettivo}
+        Implementazione in C++ di un algoritmo per il riconoscimento di pattern in serie temporali multivariate.
+        \begin{itemize}
+            \item \textbf{Input:} Serie temporale $T$ di lunghezza $N$.
+            \item \textbf{Query:} Pattern $Q$ di lunghezza $M$ ($M \ll N$).
+            \item \textbf{Output:} Indice $i$ che minimizza la distanza tra $Q$ e la finestra temporale in $T$.
+        \end{itemize}
+    \end{block}
+    \begin{block}{Versioni}
+        Sono state realizzate due implementazioni:
+        \begin{enumerate}
+            \item \textbf{Sequenziale:} CPU based.
+            \item \textbf{Parallela:} GPU based (CUDA).
+        \end{enumerate}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Introduction}
+    \begin{block}{Approccio}
+        Utilizzo di una \textbf{Sliding Window}: per ogni istante temporale $i$ si calcola la distanza tra la query e la porzione di input corrispondente.
+    \end{block}
+    \begin{block}{Metrica: SAD}
+        Sum of Absolute Differences (SAD). Per dati multivariati con $D$ dimensioni:
+        \[
+        D(i) = \sum_{m=0}^{M-1} \sum_{k=0}^{D-1} |Q[m, k] - T[i+m, k]|
+        \]
+        L'obiettivo è trovare $i_{min} = \arg\min_i D(i)$.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Introduction}
+    \begin{block}{Dataset}
+        \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition (HAR)} dataset.
+        \begin{itemize}
+            \item \textbf{Dimensioni ($D$):} 6 (3 acc + 3 gyro).
+            \item \textbf{Frequenza:} 50Hz.
+            \item \textbf{Preprocessing:} Concatenazione di training e test set + Data Augmentation.
+        \end{itemize}
+    \end{block}
+    \begin{block}{Input e Query}
+        \begin{itemize}
+            \item \textbf{Input:} Stream continuo generato concatenando i campioni e applicando un moltiplicatore con rumore uniforme.
+            \item \textbf{Query:} Sottosequenza estratta casualmente dall'input con aggiunta di rumore Gaussiano ($\mu=0, \sigma=0.01$).
+        \end{itemize}
+    \end{block}
+\end{frame}

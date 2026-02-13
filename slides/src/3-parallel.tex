@@ -1,0 +1,52 @@
+\section{Parallel}
+
+\begin{frame}{Parallel}
+    \begin{block}{Memory Layout - Structure of Arrays (SoA)}
+        Struttura trasposta per l'accesso GPU: $[x_{1,1}, x_{2,1}, \dots, x_{N,1}, x_{1,2}, \dots]$.
+        \begin{itemize}
+            \item \textbf{Problema AoS su GPU:} Accessi non coalesced all'interno del warp.
+            \item \textbf{Soluzione SoA:} Ogni thread accede a dati contigui in memoria per la stessa dimensione, massimizzando il throughput della memoria globale.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Parallel}
+    \begin{block}{Memory Hierarchy}
+        Strategia per minimizzare la latenza della Global Memory:
+        \begin{itemize}
+            \item \textbf{Global Memory:} Dataset completo ($T$).
+            \item \textbf{Constant Memory:} Query ($Q$).
+                \begin{itemize}
+                    \item Accesso broadcast a tutti i thread del warp.
+                    \item Cache dedicata (64KB), sufficiente per query tipiche.
+                \end{itemize}
+            \item \textbf{Shared Memory:} Tiling dell'input e riduzione parziale.
+            \item \textbf{Registers:} Accumulatori locali per il calcolo SAD.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Parallel}
+    \begin{block}{Tiling \& Reduction}
+        \begin{enumerate}
+            \item \textbf{Loading:} I thread del blocco collaborano per caricare una "tile" di input dalla Global alla Shared Memory.
+            \item \textbf{Compute:} Calcolo SAD locale usando i dati in Shared Memory (riduzione accessi Globali di fattore $\approx M$).
+            \item \textbf{Block Reduction:} Riduzione parallela intra-blocco per trovare il minimo locale.
+                \begin{itemize}
+                    \item Riduce drasticamente le scritture in Global Memory.
+                    \item Complessità $\mathcal{O}(\log(\text{block\_dim}))$.
+                \end{itemize}
+        \end{enumerate}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Parallel}
+    \begin{block}{Grid Configuration}
+        Mapping 1-to-1: 1 Thread = 1 Timestamp (sliding window start).
+        \begin{itemize}
+            \item \textbf{Block Size:} 256 thread (default).
+            \item \textbf{Grid Size:} $\lceil N / 256 \rceil$.
+            \item Scelta bilanciata per occupazione SM ed efficienza della riduzione.
+        \end{itemize}
+    \end{block}
+\end{frame}

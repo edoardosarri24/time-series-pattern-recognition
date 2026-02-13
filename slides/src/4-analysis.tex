@@ -1,0 +1,42 @@
+\section{Analysis}
+
+\begin{frame}{Analysis}
+    \begin{block}{Sequential Analysis}
+        \begin{itemize}
+            \item \textbf{Tempo totale ($Q=64$):} $\approx 38.8s$.
+            \item \textbf{Early Abandoning:} Speedup $\approx 2.87\times$ (da $25.35s$ a $8.84s$ solo matching).
+            \item \textbf{Padding:} Non efficace in questo contesto (overhead dati inutili).
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Analysis}
+    \begin{block}{Parallel Analysis}
+        \begin{itemize}
+            \item \textbf{Tempo totale ($Q=64$):} $\approx 14.1s$.
+            \item \textbf{Bottleneck:} Il caricamento dati domina l'esecuzione ($\approx 14.3s$ di loading vs $0.05s$ di kernel).
+            \item \textbf{Scalabilità:} Il tempo di matching è quasi irrilevante rispetto all'I/O. Aumentare $Q$ ha impatto minimo sul totale.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Analysis}
+    \begin{block}{Block Size Analysis}
+        Valutazione del tempo di kernel al variare della dimensione del blocco:
+        \begin{itemize}
+            \item \textbf{32 threads:} $0.061s$.
+            \item \textbf{256 threads (scelta):} $0.055s$ (ottimo locale).
+            \item \textbf{1024 threads:} $0.067s$ (overhead sincronizzazione barriera).
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Analysis}
+    \begin{block}{Conclusioni}
+        \begin{itemize}
+            \item La versione GPU offre un kernel estremamente performante, rendendo il problema \textbf{I/O bound}.
+            \item L'approccio \texttt{mmap} è essenziale per gestire dataset di queste dimensioni.
+            \item L'ottimizzazione dell'uso della memoria (Shared + Constant) è stata la chiave per le prestazioni GPU.
+        \end{itemize}
+    \end{block}
+\end{frame}

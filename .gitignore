@@ -10,3 +10,6 @@ sequential/build
 parallel/profiling.txt
 papavero.txt
 whole.prof
+slides_helper/
+slides/build/
+slides/main.pdf
