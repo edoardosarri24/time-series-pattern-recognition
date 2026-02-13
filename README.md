@@ -1,4 +1,15 @@
 # Time Series Pattern Recognition
+This project implements a Time Series Pattern Recognition algorithm in C++ using both a sequential approach and a parallel approach with CUDA. The goal is to find the best match for a given query pattern within a large time series dataset using the Sum of Absolute Differences (SAD) metric.
+
+For a detailed analysis and explanation of the implementation see the [report.pdf](report.pdf) file.
+
+### Dependencies
+
+- CMake
+- C++ Compiler (C++17 support required)
+- CUDA Toolkit
+- Python
+- GPerftools (for profiling)
 
 ### Execution
 The project execution is a two-step process:
@@ -10,7 +21,6 @@ The project execution is a two-step process:
 ```
 - `multiplier`: Optional. Multiplies the dataset size by generating noisy variations (default: 1).
 - `noise`: Optional. Maximum amplitude of random noise added to augmented data (default: 0.01).
-- *Note:* The script checks if `data/input.txt` already exists to avoid redundant downloads.
 
 ##### Build & Run
 Use the scripts in the `exec/` directory to build and run the project automatically.
@@ -23,16 +33,14 @@ Use the scripts in the `exec/` directory to build and run the project automatica
     - `p`: Optional. Enables padding for cache alignment (default: OFF).
     - `q=<value>`: Optional. Sets the query length (default: 64).
     - `bs=<value>`: Optional. Sets the block size. Valid ONLY for the parallel version.
-- Development (Debug):
+- Development (Debug): Builds with debug symbols and no optimizations.
     ```bash
     ./exec/debug_execution.sh [seq|par]
     ```
-    - Builds with debug symbols and no optimizations. Best for debugging logic.
-- Profiling:
+- Profiling: Builds in Release mode with profiling enabled.
     ```bash
     ./exec/profiling.sh [seq|par]
     ```
-    - Builds in Release mode with profiling enabled. Generates CPU profile reports (PDF/Text) in `[sequential|parallel]/result_profiling/`.
 - Sanitizers (Debug):
     *   `./exec/AUBsanitizer.sh [seq|par]` - Runs with Address and Undefined Behavior Sanitizers.
-    *   `./exec/Msanitizer.sh [seq|par]` - Runs with Memory Sanitizer (Linux only, requires Clang).
+    *   `./exec/Msanitizer.sh [seq|par]` - Runs with Memory Sanitizer (Linux only).
