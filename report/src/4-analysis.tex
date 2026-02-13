@@ -22,7 +22,7 @@ The server specific are the following:
 \section{Sequential}
 In this Section we analysis the result of the sequential versione described in Chapter~\ref{cap:sequential}.
 
-In the following section we analyse the detail, but in general we can say that the total execution time of the program is circa 38.8 for the default 64 query lenght and 69.4 seconds if we use a 128 query lenght.
+In the following section we analyse the detail, but in general we can say that the total execution time of the program is circa 38.8 for the default 64 query lenght, and 69.4 seconds if we use a 128 query lenght.
 
 \subsection{Early Abandoning}
 \label{sec:analysis_early_abandoning}
@@ -44,10 +44,11 @@ As we said in Section~\ref{sec:seq_padding}, we can introduce a padding to the d
 The motivation of this could be, in this case, the extra effort that the CPU must do to process the trash value of padding, since they are the 33\% of the real data: if we work with more and more lenght of the data, probabily the padding increase the speed of our code; in this case the cpu prefers handles it self the load in memory of the unpadded data.
 
 \subsection{Query lenght}
+\label{sec:seq_analysis_query_lenght}
 If we use a longest query we will obtain a greatest execution time of the matching algorithm. We have perform three experiments:
 \begin{itemize}
-    \item \textbf{64 timestamps (deafult):} The exectuion time is circa 26.2 seconds.
     \item \textbf{32 timestamps:} The exectuion time is circa 10.4 seconds.
+    \item \textbf{64 timestamps (deafult):} The exectuion time is circa 26.2 seconds.
     \item \textbf{128 timetamps:} The exectuion time is circa 56.3 seconds.
 \end{itemize}
 
@@ -56,3 +57,28 @@ The first approch for the data laoding step used the classic C++ stream. The tim
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Parallel}
+In this Section we study the speed-up obtained execution out CUDA code and.
+
+The first different between this and the sequential execution can be see analysing the total execution time of code. With the default 64 timestamps query lenght we have circa 14.114 seconds of execution time, and with 128 query length it is circa 14.931 seconds.
+
+\subsection{Loading Time}
+The bottleneck of our code is the laod time, i.e. the time that the CPU takes to bring the data from the disk to the memory. Let's take one experiments with our 3.5 GB input file: the total execution time is 14.473834 seconds, but the data loading time is 14.349911 seconds; this means that the other steps time is began irrilevant.
+
+\subsection{Query Lenght}
+If we see the result in Section~\ref{sec:seq_analysis_query_lenght}, changing the query lenght have. a huge impact on the matching algorithm execution time.
+
+In the parallel version changing the query lenght practically doesn't change the total execution time: the data loading time, that is our bottleneck, remains the same; with a 64 query length we have a matching time of 0.053448 seconds, with a 5125 query lenght we have matching time of 0.328047 seconds and with a huge 2048 query lenght we have 1.215921 seconds.
+
+The only problem with a very huge query lenght can be its sotre in constant memory: indeed with a 4096 query lenght the program throws an \textit{ptxas error} with message \textit{File uses too much global constant data}.
+
+\subsection{Block Size}
+By defualt we have a 256 block size value. Let's see if this is a good choice or there are other good value:
+\begin{itemize}
+    \item 8: The kernel execution time is 0.190880 seconds.
+    \item 32: The kernel execution time is 0.061503 seconds.
+    \item 128: The kernel execution time is 0.056112 seconds.
+    \item 256 (baseline): The kernel execution time is 0.055100 seconds.
+    \item 1024 (max): The kernel execution time is 0.067674 seconds.
+\end{itemize}
+
+Instead, with a block size of 1024, we have a huge barrier synchronization cost since also only one thread have a longer exetution time all other 31 warp have to wait the warp of that thread.

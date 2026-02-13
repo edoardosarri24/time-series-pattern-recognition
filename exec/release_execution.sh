@@ -28,13 +28,15 @@ for arg in "$@"; do
 done
 
 # Check Block Size constraints
-if [[ -n "$BLOCK_SIZE_VAL" ]]; then
-    if [[ "$MODE" == "seq" ]]; then
-        echo "Error: Block size (bs=...) cannot be defined for sequential mode."
-        exit 1
+if [[ "$MODE" == "par" ]]; then
+    if [[ -z "$BLOCK_SIZE_VAL" ]]; then
+        BLOCK_SIZE_VAL=256
     fi
     echo "Block Size: $BLOCK_SIZE_VAL"
     CMAKE_FLAGS="$CMAKE_FLAGS -DBLOCK_SIZE=$BLOCK_SIZE_VAL"
+elif [[ -n "$BLOCK_SIZE_VAL" ]]; then
+    echo "Error: Block size (bs=...) cannot be defined for sequential mode."
+    exit 1
 fi
 
 # Apply settings
@@ -59,6 +61,7 @@ if [[ "$MODE" != "seq" && "$MODE" != "par" ]]; then
     echo "Error: Invalid argument '$MODE'. Usage: $0 [seq|par] [ea] [p] [q=<value>]"
     exit 1
 fi
+
 
 # Building.
 echo "building (Release)..."

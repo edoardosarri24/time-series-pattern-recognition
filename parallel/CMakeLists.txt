@@ -19,7 +19,6 @@ target_sources(parallel_pattern_recognition PRIVATE
 target_include_directories(parallel_pattern_recognition PRIVATE
     include
     ${CMAKE_CURRENT_BINARY_DIR}/include
-    ${CUDA_INCLUDE_DIRS}
 )
 
 if(ENABLE_PROFILING)
@@ -27,4 +26,4 @@ if(ENABLE_PROFILING)
 endif()
 
 # Link CUDA runtime
-target_link_libraries(parallel_pattern_recognition PRIVATE ${CUDA_LIBRARIES})
+target_link_libraries(parallel_pattern_recognition PRIVATE CUDA::cudart)

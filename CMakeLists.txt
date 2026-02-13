@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 project(pattern_recognition LANGUAGES CXX CUDA)
 
 # package
-find_package(CUDA REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 
 # set default build type to Release if not specified.
 if(NOT CMAKE_BUILD_TYPE)
