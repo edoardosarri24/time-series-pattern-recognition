@@ -1,7 +1,7 @@
 # Time Series Pattern Recognition
 This project implements a Time Series Pattern Recognition algorithm in C++ using both a sequential approach and a parallel approach with CUDA. The goal is to find the best match for a given query pattern within a large time series dataset using the Sum of Absolute Differences (SAD) metric.
 
-For a detailed analysis and explanation of the implementation see the [report.pdf](report.pdf) file.
+For a detailed analysis and explanation of the implementation, see the [report.pdf](report.pdf) file. The slides of the project are instead in [slides.pdf](slides.pdf) file.
 
 ### Dependencies
 - CMake
@@ -48,7 +48,7 @@ Use the scripts in the `exec/` directory to build and run the project automatica
 .
 ├── CMakeLists.txt
 ├── README.md
-├── agent.md - Agent specific documentation (gemini used)
+├── agent.md - Agent specific documentation (Gemini used)
 ├── exec - Helper scripts for building, running, and profiling
 │   ├── AUBsanitizer.sh - Runs Address and Undefined Behavior Sanitizers
 │   ├── Msanitizer.sh - Runs Memory Sanitizer

@@ -1,16 +1,16 @@
 \chapter{Analysis}
 \label{cap:analysis}
-In this Chapter we analyse the sequential code and the parallel one.
+In this chapter, we analyze both the sequential and parallel code.
 
 The experiments were conducted using these settings:
 \begin{itemize}
-    \item The dataset was  downloaded with a multiplier of 50. This scaling factor, that is described in Section~\ref{sec:multiplier}, was determinated empirically and ensure that the execution time of the searching algorithm doeasn't be to much rapid. It implies that the \textit{input.txt} file has circa 3.5 GB size.
-    \item The query lenght default is 64 timestamps.
+    \item The dataset was downloaded with a multiplier of 50. This scaling factor, described in Section~\ref{sec:multiplier}, was determined empirically to ensure that the execution time of the search algorithm is not too rapid. It implies that the \textit{input.txt} file is circa 3.5 GB in size.
+    \item The query length default is 64 timestamps.
 \end{itemize}
 
 \myskip
 
-The server specific are the following:
+The server specifications are the following:
 \begin{itemize}
     \item Architecture: x86-64
     \item Operating System: Ubuntu 22.04.4 LTS
@@ -20,59 +20,59 @@ The server specific are the following:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sequential}
-In this Section we analysis the result of the sequential versione described in Chapter~\ref{cap:sequential}.
+In this section, we analyze the results of the sequential version described in Chapter~\ref{cap:sequential}.
 
-In the following section we analyse the detail, but in general we can say that the total execution time of the program is circa 38.8 for the default 64 query lenght, and 69.4 seconds if we use a 128 query lenght.
+In the following section we analyze the details, but in general we can say that the total execution time of the program is circa 38.8 seconds for the default 64 query length, and 69.4 seconds if we use a 128 query length.
 
 \subsection{Early Abandoning}
 \label{sec:analysis_early_abandoning}
-We tested the sequential performance with and without the Early Abandoning optimization. How we said in Section~\ref{sec:seq_earling_abandoning}, the correct baseline is with this tecnique disable.
+We tested the sequential performance with and without the Early Abandoning optimization. As we said in Section~\ref{sec:seq_earling_abandoning}, the correct baseline is with this technique disabled.
 
-With ealing abandoning anable we obtain a circa $2.87\times$ speedup: the matching time, i.e. the execution time for seearching in the input file, with it enables is about 8.84 seconds, and without is circa 25.35 second.
+With early abandoning enabled we obtain a circa $2.87\times$ speedup: the matching time, i.e. the execution time for searching in the input file, with it enabled is about 8.84 seconds, and without is circa 25.35 seconds.
 
 \subsection{Profiling}
-The profiling analysis was performed using \texttt{gperftools}, as described in Section~\ref{sec:profiler}, on the sequential implementation. This analysis reveals two distinct phases and the I/O buond:
+The profiling analysis was performed using \texttt{gperftools}, as described in Section~\ref{sec:profiler}, on the sequential implementation. This analysis reveals two distinct phases and the I/O bound:
 \begin{itemize}
     \item Pattern matching: This dominates the total execution time with circa 65\%.
-    \item Data loading: The data loading execution time is circa 30\%.
+    \item Data loading: Data loading accounts for circa 30\% of the execution time.
 \end{itemize}
 
 \subsection{Padding}
 \label{sec:analysis_padding}
-As we said in Section~\ref{sec:seq_padding}, we can introduce a padding to the data to alligned them with the cache line size. The experiments with and without padding show us that, in this case, introducing padding doesn't improve the efficiency of out matching algorithm: its execution time with padding is circa 35.8 seconds, but withou padding is circa 26.4 seconds.
+As we said in Section~\ref{sec:seq_padding}, we can introduce a padding to the data to align them with the cache line size. The experiments with and without padding show us that, in this case, introducing padding doesn't improve the efficiency of our matching algorithm: its execution time with padding is circa 35.8 seconds, but without padding is circa 26.4 seconds.
 
-The motivation of this could be, in this case, the extra effort that the CPU must do to process the trash value of padding, since they are the 33\% of the real data: if we work with more and more lenght of the data, probabily the padding increase the speed of our code; in this case the cpu prefers handles it self the load in memory of the unpadded data.
+The motivation of this could be, in this case, the extra effort that the CPU must do to process the padding values, since they are the 33\% of the real data: if we work with a longer data length, probably the padding increases the speed of our code; in this case the cpu prefers to handle itself the load in memory of the unpadded data.
 
-\subsection{Query lenght}
+\subsection{Query Length}
 \label{sec:seq_analysis_query_lenght}
-If we use a longest query we will obtain a greatest execution time of the matching algorithm. We have perform three experiments:
+If we use a longer query we will obtain a greater execution time of the matching algorithm. We have performed three experiments:
 \begin{itemize}
-    \item \textbf{32 timestamps:} The exectuion time is circa 10.4 seconds.
-    \item \textbf{64 timestamps (deafult):} The exectuion time is circa 26.2 seconds.
-    \item \textbf{128 timetamps:} The exectuion time is circa 56.3 seconds.
+    \item \textbf{32 timestamps:} The execution time is circa 10.4 seconds.
+    \item \textbf{64 timestamps (default):} The execution time is circa 26.2 seconds.
+    \item \textbf{128 timestamps:} The execution time is circa 56.3 seconds.
 \end{itemize}
 
 \subsection{Data Loading}
-The first approch for the data laoding step used the classic C++ stream. The time required for the parsing of the input text file wax approximatly 47 seconds. Whit the new memory mapped I/O approach the time is now circa 13.32 seconds.
+The first approach for the data loading step used the classic C++ stream. The time required for the parsing of the input text file was approximately 47 seconds. With the new memory mapped I/O approach the time is now circa 13.32 seconds.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Parallel}
-In this Section we study the speed-up obtained execution out CUDA code and.
+In this section, we study the speed-up obtained by executing our CUDA code.
 
-The first different between this and the sequential execution can be see analysing the total execution time of code. With the default 64 timestamps query lenght we have circa 14.114 seconds of execution time, and with 128 query length it is circa 14.931 seconds.
+The first difference between this and the sequential execution can be seen by analyzing the total execution time of code. With the default 64 timestamps query length we have circa 14.114 seconds of execution time, and with 128 query length it is circa 14.931 seconds.
 
 \subsection{Loading Time}
-The bottleneck of our code is the laod time, i.e. the time that the CPU takes to bring the data from the disk to the memory. Let's take one experiments with our 3.5 GB input file: the total execution time is 14.473834 seconds, but the data loading time is 14.349911 seconds; this means that the other steps time is began irrilevant.
+The bottleneck of our code is the load time, i.e. the time that the CPU takes to bring the data from the disk to the memory. Let's take one experiment with our 3.5 GB input file: the total execution time is 14.473834 seconds, but the data loading time is 14.349911 seconds; this means that the other steps' time becomes irrelevant.
 
-\subsection{Query Lenght}
-If we see the result in Section~\ref{sec:seq_analysis_query_lenght}, changing the query lenght have. a huge impact on the matching algorithm execution time.
+\subsection{Query Length}
+If we see the result in Section~\ref{sec:seq_analysis_query_lenght}, changing the query length has a huge impact on the matching algorithm execution time.
 
-In the parallel version changing the query lenght practically doesn't change the total execution time: the data loading time, that is our bottleneck, remains the same; with a 64 query length we have a matching time of 0.053448 seconds, with a 5125 query lenght we have matching time of 0.328047 seconds and with a huge 2048 query lenght we have 1.215921 seconds.
+In the parallel version changing the query length practically doesn't change the total execution time: the data loading time, that is our bottleneck, remains the same; with a 64 query length we have a matching time of 0.053448 seconds, with a 512 query length we have matching time of 0.328047 seconds and with a huge 2048 query length we have 1.215921 seconds.
 
-The only problem with a very huge query lenght can be its sotre in constant memory: indeed with a 4096 query lenght the program throws an \textit{ptxas error} with message \textit{File uses too much global constant data}.
+The only problem with a very huge query length can be its store in constant memory: indeed with a 4096 query length the program throws an \textit{ptxas error} with message \textit{File uses too much global constant data}.
 
 \subsection{Block Size}
-By defualt we have a 256 block size value. Let's see if this is a good choice or there are other good value:
+By default we have a 256 block size value. Let's see if this is a good choice or there are other good values:
 \begin{itemize}
     \item 8: The kernel execution time is 0.190880 seconds.
     \item 32: The kernel execution time is 0.061503 seconds.
@@ -81,4 +81,4 @@ By defualt we have a 256 block size value. Let's see if this is a good choice or
     \item 1024 (max): The kernel execution time is 0.067674 seconds.
 \end{itemize}
 
-Instead, with a block size of 1024, we have a huge barrier synchronization cost since also only one thread have a longer exetution time all other 31 warp have to wait the warp of that thread.
+With a block size of 8, we have a waste of hardware resources because the warp size is 32. Instead, with a block size of 1024, we have a huge barrier synchronization cost since also only one thread has a longer execution time all other 31 warps have to wait for the warp of that thread.

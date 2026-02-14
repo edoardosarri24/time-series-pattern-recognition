@@ -1,31 +1,31 @@
 \chapter{Parallel}
 \label{cap:parallel}
-In this Chapter we analyse the choice taken for the parallel version of the program. The main goal of this version in maximise the throughtput, i.e., obtain the maximum speed-up related to the sequential version, described in Chapter~\ref{cap:sequential}.
+In this chapter, we analyze the choices made for the parallel version of the program. The main goal of this version is to maximize the throughput, i.e., obtain the maximum speed-up related to the sequential version, described in Chapter~\ref{cap:sequential}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Memory Layout}
-The GPU are thinked to work with SIMT (Single Instruction, Multiple Threads) execution pattern, and this implies that the Array of Structures (AoS) doesn't match this pattern. We have to define a new layoyt of data, and the Structures of Array (SoA) match perfectly the GPU coaleshing memory access.
+GPUs are designed to work with SIMT (Single Instruction, Multiple Threads) execution pattern, and this implies that the Array of Structures (AoS) doesn't match this pattern. We have to define a new data layout, and the Structure of Arrays (SoA) matches the GPU coalesced memory access perfectly.
 
-\subsection{SoA memory pattern}
-The main problem of the AoS in the GPU is given by the warp (i.e., group of 32 thread) parallel execution: they execute the same istruction over different data. In particular, let $T$ be the linear array of data that follow the SoA memory pattern, the first thread requires in order $t_0d_0,\cdots,t_0d_5$, the second requires $t_1d_0,\cdots,t_1d_5$, and so on. If the dimension of these data are contiguous in memory, when the first thread bring the its first dimension data in memory, it bring also the the first dimension of the other threads; when these other threads searchs for their first dimension data in memory, the data will be already present.
+\subsection{SoA Memory Pattern}
+The main problem of the AoS in the GPU is given by the warp (i.e., a group of 32 threads) parallel execution: they execute the same instruction over different data. In particular, let $T$ be the linear array of data that follow the SoA memory pattern, the first thread requires in order $t_0d_0,\cdots,t_0d_5$, the second requires $t_1d_0,\cdots,t_1d_5$, and so on. If the dimension of these data are contiguous in memory, when the first thread loads its first dimension data in memory, it also loads the first dimension of the other threads; when these other threads search for their first dimension data in memory, the data will be already present.
 
 \subsection{Inline mapper equation}
 \label{sec:par_inline_equation}
-So the data are stored in a Structures of Array patter, so in a linear long array $T$ where the data related to each dimension are contigous. To define the index in this array of the d-th dimension of the $t$-th element we can use $Index(t,d)=d\cdot N+t$, where $N$ is the dimension of the datataset, i.e. the number of total timestamps.
+Thus, the data is stored in a Structure of Arrays pattern, so in a linear long array $T$ where the data related to each dimension are contiguous. To define the index in this array of the d-th dimension of the $t$-th element we can use $Index(t,d)=d\cdot N+t$, where $N$ is the size of the dataset, i.e. the number of total timestamps.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Memory Hierarchy}
 \label{sec:par_memory}
-In GPU programming is important define de memory hierarchy. The objective is minimize the data trasfer from the main global memory, which is the slower, to the thread register. We define the hierarchy as follows:
+In GPU programming, it is important to define the memory hierarchy. The objective is to minimize data transfer from the main global memory, which is the slowest, to the thread registers. We define the hierarchy as follows:
 \begin{itemize}
     \item Global Memory \\
         Stores the full input dataset $T$ in SoA format.
     \item Constant Memory \\
-        Stores the Query $Q$. To ensure consistency and maximize cache efficiency, $Q$ is also stored in \textbf{SoA layout}. Since the constant memory is small (i.e., usually 64KB) the query can't be to much longht: in out case, consider the default lenght of 64 described in Section~\ref{sec:input}, we have circa 1.5 KB, so it fits easily within the 64KB constant memory limit. This garantee a huge performance benefit: we haven't to tranport the query from the global memory to the local one for each thread; all threads in a warp use the same query, so we can do a single memory transaction to have this data in the local memory.
+        Stores the Query $Q$. To ensure consistency and maximize cache efficiency, $Q$ is also stored in \textbf{SoA layout}. Since the constant memory is small (i.e., usually 64KB) the query cannot be too long: in our case, considering the default length of 64 described in Section~\ref{sec:input}, we have circa 1.5 KB, so it fits easily within the 64KB constant memory limit. This guarantees a huge performance benefit: we do not have to transport the query from the global memory to the local one for each thread; all threads in a warp use the same query, so we can do a single memory transaction to have this data in the local memory.
     \item Shared Memory \\
-        This memory is much faster than the global memory and allows threads to cooperate. We use it to perform a block-wise reduction and to implment a tiling strategy:
+        This memory is much faster than the global memory and allows threads to cooperate. We use it to perform a block-wise reduction and to implement a tiling strategy:
         \begin{itemize}
-            \item Tiling: Stores a "tile" of the input data corresponding to the block's sliding window range. This allows threads to read input data from fast on-chip memory instead of Global Memory, reducing global memory accesses by a factor of circa $\times query\_lenght$.
+            \item Tiling: Stores a "tile" of the input data corresponding to the block's sliding window range. This allows threads to read input data from fast on-chip memory instead of Global Memory, reducing global memory accesses by a factor of circa $\times query\_length$.
             \item Reduction: Stores the partial SAD results to perform the block-wise parallel reduction efficiently.
         \end{itemize}
         The total shared memory usage per block is approximately 3.25 KB (Reduction: $256 \times 8B$ + Tiling: $319 \times 4B$), which is well below the hardware limit (typically 48 KB per SM), ensuring high occupancy.
@@ -37,16 +37,16 @@ In GPU programming is important define de memory hierarchy. The objective is min
 \section{Pipeline}
 The execution flow is designed to orchestrate the Host-Device collaboration, minimizing control divergence and maximizing memory throughput. The pipeline consists of the following strictly ordered stages:
 \begin{enumerate}
-    \item Data loading  (Host) \\
-        The Host loads the input data using the efficient Memory Mapped I/O (\texttt{mmap}) strategy, identical to the sequential version described in Section~\ref{sec:data_loading}. Since the raw file is in AoS format, the Host iterates through the mapped memory and transposes the data into the SoA layout. In this case we also have to solve the paging potential problem: we have to prevent that the host OS shfit the data to the disk during the traner from the CPU memory to the GPU memory. This is addressable tanks to the pinned-memory: we have to say to the host OS that that memory cann't be pageable.
+    \item Data Loading (Host) \\
+        The Host loads the input data using the efficient Memory Mapped I/O (\texttt{mmap}) strategy, identical to the sequential version described in Section~\ref{sec:data_loading}. Since the raw file is in AoS format, the Host iterates through the mapped memory and transposes the data into the SoA layout. In this case we also have to solve the paging potential problem: we have to prevent that the host OS shift the data to the disk during the transfer from the CPU memory to the GPU memory. This is addressed thanks to pinned memory: we have to say to the host OS that that memory cannot be paged.
     \item Query Loading (Host) \\
         The Host loads the query vector $Q$ from \texttt{data/query.txt}. The query data is then uploaded to the GPU Constant Memory.
     \item Index definition (Device) \\
         The first step for each thread is to define the index of the timestamp on which it will work. Since we may initialize more threads than the number of timestamps, each thread must verify if its index is out of boundaries, i.e. if $tid \geq (N - M)$, where $N$ is the length of the input and $M$ of the query.
     \item Local accumulation (Device) \\
-        Each thread accumulates in a local register the Sum of Absolute Differences of its related timestamp; this register resides in the fastest memory available (i.e., register file). As we said in Section~\ref{sec:par_memory}, the query is retrived from the constant memory and, to minimize global memory latency, the data from the shared memory using a tiling strategy. For the tiling all threads in a block cooperate to load the required input segment from Global Memory into Shared Memory. The tile has $block\_size + query\_length - 1$ size. The distance is computed as $D(tid) = \sum_{d=0}^{D-1} \sum_{m=0}^{M-1} \left|Q[m, d] - T_{shared}[tid_{local} + m] \right|$.
+        Each thread accumulates in a local register the Sum of Absolute Differences of its related timestamp; this register resides in the fastest memory available (i.e., register file). As we said in Section~\ref{sec:par_memory}, the query is retrieved from constant memory and, to minimize global memory latency, the data from the shared memory using a tiling strategy. For the tiling all threads in a block cooperate to load the required input segment from Global Memory into Shared Memory. The tile has $block\_size + query\_length - 1$ size. The distance is computed as $D(tid) = \sum_{d=0}^{D-1} \sum_{m=0}^{M-1} \left|Q[m, d] - T_{shared}[tid_{local} + m] \right|$.
     \item Block Reduction (Device) \\
-        This is the critical optimization step: writing every thread's result to Global Memory isn't efficint since the global memory is the slower memory and implies the transfer of all data from the global memory to the host memory, and we3 know that the PCI bus is the main bottleneck. To avoid this problems we perform a block-grain reduction: we define the best index $i_j^*$ for each block $j$ usgin the shared memory and the reduction pattern; in this way we have to bring in host memory only \textit{grid\_size} value, reducing the data transfer fo a \textit{block\_dim} factor. With the reduction we have a $\mathcal{O}{(\log(block\_size))}$ cost instead a linear cost is we performe the reduction sequentially in cpu. In this scenario i critical the coice of the \textit{block\_size} value.
+        This is the critical optimization step: writing every thread's result to Global Memory isn't efficient since the global memory is the slower memory and implies the transfer of all data from the global memory to the host memory, and we know that the PCI bus is the main bottleneck. To avoid this problem we perform a block-grain reduction: we define the best index $i_j^*$ for each block $j$ using shared memory and the reduction pattern; in this way we have to bring in host memory only \textit{grid\_size} value, reducing the data transfer fo a \textit{block\_dim} factor. With the reduction we have a $\mathcal{O}{(\log(block\_size))}$ cost instead a linear cost if we perform the reduction sequentially on the CPU. In this scenario, the choice of the \textit{block\_size} value is critical.
     \item Result write-back (Device) \\
         After the reduction, only the first thread of the block holds the block's minimum. This thread writes two values to Global Memory: the minimum SAD and its corresponding timestamp index.
     \item Final reduction (Host) \\
@@ -55,10 +55,10 @@ The execution flow is designed to orchestrate the Host-Device collaboration, min
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Grid}
-We implement a kernel where the thread $i$-th computes the SAD distance for a single sliding window starting at index $i$, so for the $i$-th timestamp.
+We implement a kernel where the i-th thread computes the SAD distance for a single sliding window starting at index $i$, so for the $i$-th timestamp.
 
 The grid that mapped each thread in its timestamp is a 1D grid with 1D blocks.
-The size of the grid depends on the number of timestamps $N$ and the number of thread \textit{block\_dim} for each block. We have to ensure that there are at leans one thread for each timestamp, so we can define the dimension of the grid, i.e. the number of block, as $dimGrid.x = \left\lceil \frac{N}{block\_dim} \right\rceil$.
+The size of the grid depends on the number of timestamps $N$ and the number of thread \textit{block\_dim} for each block. We have to ensure that there are at least one thread for each timestamp, so we can define the dimensions of the grid, i.e., the number of blocks, as $dimGrid.x = \left\lceil \frac{N}{block\_dim} \right\rceil$.
 
 \subsection{Block Dimension}
 The critical choice is the dimension $block\_dim$ of each block. In our implementation we set by default $block\_dim = 256$, but this value can be set at compilation time. This choice is driven by:
@@ -66,16 +66,16 @@ The critical choice is the dimension $block\_dim$ of each block. In our implemen
     \item Hardware \\
         We can define at maximum 1024 thread per block.
     \item Warp \\
-        Is a good choice set the block dimension as a multiple of 32, i.e. the number of thread for warp, the smallest chunk of thread that is allocated on cores.
+        Is a good choice set the block dimension as a multiple of 32, i.e. the number of threads per warp, the smallest chunk of thread that is allocated on cores.
     \item Reduction efficiency \\
-        The kernel outputs is composed by $N/block\_dim$ partial results: i lager $block\_dim$ drastically reduces the volume of global memory writes and PCIe traffic (e.g., $block\_dim=256$ reduces output size by $99.6\%$ ($1-1/block\_dim$)).
+        The kernel output is composed by $N/block\_dim$ partial results: a larger $block\_dim$ drastically reduces the volume of global memory writes and PCIe traffic (e.g., $block\_dim=256$ reduces output size by $99.6\%$ ($1-1/block\_dim$)).
     \item Synchronization \\
         Larger blocks (e.g., $1024$) increase the synchronization latency at the barrier, as the entire block must wait for the slowest warp.
     \item Latency hiding \\
-        If \textit{block\_size} is to to much big, we are limiting the scheduler's ability to switch contexts and hide memory latency because we can have to few block within a SM (GPU Streaming Multiprocessors (SMs) typically support up to 2048 resident threads).
+        If \textit{block\_size} is too big, we are limiting the scheduler's ability to switch contexts and hide memory latency because we can have too few blocks within an SM (GPU Streaming Multiprocessors (SMs) typically support up to 2048 resident threads).
     \item Shared memory hw limit \\
-        The Shared Memory is logically shared among the thread within the block, but fisically is shared among all thread in a SM. Its usage per block is proportional to \textit{block\_size} ($2 \cdot block\_size \cdot \text{sizeof(float)}$).
+        The Shared Memory is logically shared among the thread within the block, but physically is shared among all thread in a SM. Its usage per block is proportional to \textit{block\_size} ($2 \cdot block\_size \cdot \text{sizeof(float)}$).
 \end{itemize}
 
 \subsection{Index Mapping}
-The global thread index $tid$ maps directly to the time-series index $i$. The thread equation, described theorically in Section~\ref{sec:par_inline_equation}, began pratically $tid = blockIdx.x \\ \times blockDim.x + threadIdx.x$, where: \textit{blockIdx.x} defines the number of blocks previus the current thread block; \textit{blockDim.x} describes the dimension of the single block; \textit{threadIdx.x} defines the local index of the thread in the block.
+The global thread index $tid$ maps directly to the time-series index $i$. The thread equation, described theoretically in Section~\ref{sec:par_inline_equation}, becomes practically $tid = blockIdx.x \\ \times blockDim.x + threadIdx.x$, where: \textit{blockIdx.x} defines the number of blocks preceding the current thread block; \textit{blockDim.x} describes the dimension of the single block; \textit{threadIdx.x} defines the local index of the thread in the block.

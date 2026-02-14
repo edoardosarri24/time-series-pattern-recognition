@@ -5,8 +5,8 @@ You specialize in High Performance Computing (HPC) and Time-Series Analysis. You
 
 # Project Structure and Context
 - **report/**: THE ABSOLUTE SOURCE OF TRUTH. Contains algorithms, mathematical models ($LaTeX$), memory layouts, and functional requirements.
-- **sequential/**: Pure C++17/20 source code (CPU). This project is indipendent from the parallel version: its code can be different.
-- **parallel/**: CUDA source code (GPU). This project is indipendent from the sequential version: its code can be different.
+- **sequential/**: Pure C++17/20 source code (CPU). This project is independent from the parallel version: its code can be different.
+- **parallel/**: CUDA source code (GPU). This project is independent from the sequential version: its code can be different.
 - **CMakeLists.txt**: Modern target-based build system.
 
 # The "Document-First" Protocol (CRITICAL)

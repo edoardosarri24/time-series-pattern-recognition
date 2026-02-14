@@ -1,11 +1,24 @@
 \section{Parallel}
+\subsection{Time Series Pattern Recognition}
 
 \begin{frame}{Parallel}
-    \begin{block}{Memory Layout - Structure of Arrays (SoA)}
-        Struttura trasposta per l'accesso GPU: $[x_{1,1}, x_{2,1}, \dots, x_{N,1}, x_{1,2}, \dots]$.
+        L'\href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/a9dfa266d9fea1eae1e7256da641cce54909b2f5/parallel/src/main.cpp}{esecuzione parallela} segue i seguenti step:
+        \begin{enumerate}
+            \item \textbf{Data Loading:} Caricamento dati e query. Come nella versione sequenziale, ma in più si una pinned memory.
+            \item \textbf{Trasferimento H2D:} Si carica in GPU i dati grezzi.
+            \item \textbf{Kernel:} Ogni thread calcola la SAD per un timestamp.
+            \item \textbf{Trasferimento D2H:} Si porta in memoria host i risultati parziali.
+            \item \textbf{Final Reduction:} L'Host cerca il minimo globale tra i candidati ricevuti dalla GPU.
+        \end{enumerate}
+\end{frame}
+
+\begin{frame}{Parallel}
+    \begin{block}{Memory Layout}
+        SoA memory pattern: $[x_{1,i}, \dots, x_{N,i}, x_{1,i+1}, \dots], i\in[0, D-1]$.
         \begin{itemize}
-            \item \textbf{Problema AoS su GPU:} Accessi non coalesced all'interno del warp.
-            \item \textbf{Soluzione SoA:} Ogni thread accede a dati contigui in memoria per la stessa dimensione, massimizzando il throughput della memoria globale.
+            \item \textbf{Problema:} Con AoS gli accessi non sono coalesced all'interno del warp.
+            \item \textbf{Soluzione:} Con SoA il primo thread che accede alla sua dimensione di cui ha bisogno, porta in memoria anche la dimensione necessaria agli altri.
+            \item \textbf{Accesso:} Con $Index(t,d) = d\cdot N + t$.
         \end{itemize}
     \end{block}
 \end{frame}
@@ -14,39 +27,48 @@
     \begin{block}{Memory Hierarchy}
         Strategia per minimizzare la latenza della Global Memory:
         \begin{itemize}
-            \item \textbf{Global Memory:} Dataset completo ($T$).
+            \item \textbf{Global Memory:} Dataset di input.
             \item \textbf{Constant Memory:} Query ($Q$).
                 \begin{itemize}
-                    \item Accesso broadcast a tutti i thread del warp.
-                    \item Cache dedicata (64KB), sufficiente per query tipiche.
+                    \item Accesso rapido si una cache.
+                    \item I dati non sono trasportati dalla global memory per ogni thread.
+                    \item Query di 64 time stamps occupa $64\cdot 6\cdot 4 = 1536$ Byte.
                 \end{itemize}
-            \item \textbf{Shared Memory:} Tiling dell'input e riduzione parziale.
-            \item \textbf{Registers:} Accumulatori locali per il calcolo SAD.
+            \item \textbf{Shared Memory:} Tiling dell'input e riduzione parziale del blocco.
+            \item \textbf{Registers:} Memoria locale al thread per accumolare SAD.
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}{Parallel}
-    \begin{block}{Tiling \& Reduction}
-        \begin{enumerate}
-            \item \textbf{Loading:} I thread del blocco collaborano per caricare una "tile" di input dalla Global alla Shared Memory.
-            \item \textbf{Compute:} Calcolo SAD locale usando i dati in Shared Memory (riduzione accessi Globali di fattore $\approx M$).
-            \item \textbf{Block Reduction:} Riduzione parallela intra-blocco per trovare il minimo locale.
-                \begin{itemize}
-                    \item Riduce drasticamente le scritture in Global Memory.
-                    \item Complessità $\mathcal{O}(\log(\text{block\_dim}))$.
-                \end{itemize}
-        \end{enumerate}
+    \begin{block}{Shared Memory}
+        \begin{itemize}
+            \item \textbf{Tiling:} Accessi alla global memory ridotti di un fattore $\approx M$.
+            \begin{itemize}
+                \item I thread del blocco collaborano per caricare la parte di input che serve a tutti dalla global memory.
+                \item Ogni thread calcola la SAD usando i dati in Shared Memory, locale rispetto allo SM e molto più veloce.
+            \end{itemize}
+            \item \textbf{Riduzione:} Minimo locale all'interno del blocco con il pattern Reduction.
+            \begin{itemize}
+                \item Riduce le scritture in global memory da $N$ a $\lceil N/M \rceil$.
+                \item Riduce il trasporto dalla global memory alla memoria host.
+            \end{itemize}
+        \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}{Parallel}
-    \begin{block}{Grid Configuration}
-        Mapping 1-to-1: 1 Thread = 1 Timestamp (sliding window start).
+    \begin{block}{Grid}
+        Grid 1D: il thread $i$-esimo calcola la distanza tra query e il timestamp $i$-esimo.
         \begin{itemize}
-            \item \textbf{Block Size:} 256 thread (default).
+            \item \textbf{Block Size:} 256. Le motivazioni sono:
+            \begin{itemize}
+                \item Multiplo di 32 (warp size).
+                \item Usando la riduzione locale al blocco, le scritture in global memory sono ridotte del $\tfrac{1}{1/M}\approx99.6\%$.
+                \item Blocchi più grandi portano a un overhead sulla barriera prima della riduzione locale al blocco.
+            \end{itemize}
             \item \textbf{Grid Size:} $\lceil N / 256 \rceil$.
-            \item Scelta bilanciata per occupazione SM ed efficienza della riduzione.
+            \item Index: $tid=blockIdx.x * blockDim.x + threadIdx.x$.
         \end{itemize}
     \end{block}
 \end{frame}

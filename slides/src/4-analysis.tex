@@ -1,42 +1,95 @@
 \section{Analysis}
+\subsection{Time Series Pattern Recognition}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}{Analysis}
-    \begin{block}{Sequential Analysis}
+    Il dataset è stato aumentato con un \texttt{multiplier=50}. La dimensione finale su cui sono fatte le analisi è 3.5 GB.
+    \vfill
+    Il server usato (papavero):
+    \begin{itemize}
+        \item Architettura: x86-64
+        \item OS: Ubuntu 22.04.4 LTS
+        \item Kernel: Linux 6.8.0-52-generic
+    \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Analysis - Sequential}
+    \begin{block}{Tempo totale}
         \begin{itemize}
-            \item \textbf{Tempo totale ($Q=64$):} $\approx 38.8s$.
-            \item \textbf{Early Abandoning:} Speedup $\approx 2.87\times$ (da $25.35s$ a $8.84s$ solo matching).
-            \item \textbf{Padding:} Non efficace in questo contesto (overhead dati inutili).
+            \item \textbf{$Q=64$} (default): 38.8 secondi.
+            \item \textbf{$Q=128$}: 69.4 secondi.
+        \end{itemize}
+    \end{block}
+    \begin{block}{Ealing Abandoning}
+        Il tempo del matching (senza I/O) è:
+        \begin{itemize}
+            \item \textbf{Senza} (default): $25.35$ secondi.
+            \item \textbf{Con}: 8.84 secondi.
+            \item \textbf{Speed-up}: 2.87.
         \end{itemize}
     \end{block}
 \end{frame}
 
-\begin{frame}{Analysis}
-    \begin{block}{Parallel Analysis}
+\begin{frame}{Analysis - Sequential}
+    \begin{block}{Profiling}
         \begin{itemize}
-            \item \textbf{Tempo totale ($Q=64$):} $\approx 14.1s$.
-            \item \textbf{Bottleneck:} Il caricamento dati domina l'esecuzione ($\approx 14.3s$ di loading vs $0.05s$ di kernel).
-            \item \textbf{Scalabilità:} Il tempo di matching è quasi irrilevante rispetto all'I/O. Aumentare $Q$ ha impatto minimo sul totale.
+            \item \textbf{Data Loading}: 65\% del tempo totale.
+            \item \textbf{Matching}: 30\% del tempo totale.
+        \end{itemize}
+    \end{block}
+    \begin{block}{Padding}
+        \begin{itemize}
+            \item \textbf{Senza} (default): $26.4$ secondi.
+            \item \textbf{Con}: 35.8 secondi.
+            \item \textbf{Causa}: 33\% di dati di padding processati.
         \end{itemize}
     \end{block}
 \end{frame}
 
-\begin{frame}{Analysis}
-    \begin{block}{Block Size Analysis}
-        Valutazione del tempo di kernel al variare della dimensione del blocco:
+\begin{frame}{Analysis - Sequential}
+    \begin{block}{Lunghezza Query}
+        Tempo di matching:
         \begin{itemize}
-            \item \textbf{32 threads:} $0.061s$.
-            \item \textbf{256 threads (scelta):} $0.055s$ (ottimo locale).
-            \item \textbf{1024 threads:} $0.067s$ (overhead sincronizzazione barriera).
+            \item \textbf{$Q=32$}: $10.4$ secondi.
+            \item \textbf{$Q=64$} (default): $26.2$ secondi.
+            \item \textbf{$Q=128$}: $56.3$ secondi.
         \end{itemize}
     \end{block}
 \end{frame}
 
-\begin{frame}{Analysis}
-    \begin{block}{Conclusioni}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Analysis - Parallel}
+    \begin{block}{Tempo totale}
+        I vantaggi si ottengono aumentando la dimensione della query e dell'input:
         \begin{itemize}
-            \item La versione GPU offre un kernel estremamente performante, rendendo il problema \textbf{I/O bound}.
-            \item L'approccio \texttt{mmap} è essenziale per gestire dataset di queste dimensioni.
-            \item L'ottimizzazione dell'uso della memoria (Shared + Constant) è stata la chiave per le prestazioni GPU.
+            \item \textbf{$Q=64$} (default): 14.114 secondi. Speed-up di 2.75x rispetto al sequenziale.
+            \item \textbf{$Q=128$}: 14.931 secondi. Speed-up di 4,65x rispetto al sequenziale.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Analysis - Parallel}
+    \begin{block}{Lunghezza query}
+        Tempo di matching:
+        \begin{itemize}
+            \item \textbf{$Q=64$} (default): 0.053448 secondi.
+            \item \textbf{$Q=512$}: 0.328047 secondi.
+            \item \textbf{$Q=2048$}: 1.215921 secondi.
+            \item \textbf{$Q=4096$}: Troppo grande per la constant memory.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Analysis - Parallel}
+    \begin{block}{Block size}
+        Tempo di matching:
+        \begin{itemize}
+            \item \textbf{$Q=8$}: 0.190880 secondi. Abbiamo una perdita di occupazione hw: blocchi da 8 threads ma warp da 32 threads.
+            \item \textbf{$Q=32$}: 0.061503 secondi.
+            \item \textbf{$Q=64$}: 0.056112 secondi.
+            \item \textbf{$Q=256$} (default): 0.055100 secondi.
+            \item \textbf{$Q=1024$} (max): 0.067674 secondi. Costo della sincronizzazione per il calcolo di $i^*$ del blocco.
         \end{itemize}
     \end{block}
 \end{frame}

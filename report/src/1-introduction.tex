@@ -1,22 +1,22 @@
 \chapter{Introduction}
-This project is about the C++ implementation of a program that, given a pattern (i.e., a query), found the it closest sequential in a time series input. There are two implementation: the first is a sequential approach, described in Chapter~\ref{cap:sequential}; the second use the CUDA framework, scribed in Chapter~\ref{cap:parallel}, to obtain the maximum speed-up.
+This project is about the C++ implementation of a program that, given a pattern (i.e., a query), finds the closest subsequence in a time series input. There are two implementations: the first is a sequential approach, described in Chapter~\ref{cap:sequential}; the second uses the CUDA framework, described in Chapter~\ref{cap:parallel}, to obtain the maximum speed-up.
 
 This is the \href{https://github.com/edoardosarri24/time-series-pattern-recognition}{repository} of the project.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Approach}
-To find the best match the approach used is the sliding window: for each instance time we compute a distance between the query and the input. Afeter this we return the best part of the input that is closest to the query. If the $Q$ is the lenght of the query and $I$ is the lenght of the input, we have $I\gg Q$).
+To find the best match the approach used is the sliding window: for each time instant we compute a distance between the query and the input. After this we return the best part of the input that is closest to the query. If $Q$ is the length of the query and $I$ is the length of the input, we have $I\gg Q$).
 
-The distance from the query and the input window is the the Sum of Absolute Distance (SAD). If we use it within univariate data, if are at $i$-th instant time, and the query has a lenght of $M$, we compute the distance as $D(i)=\displaystyle\sum_{m=0}^{M-1}|Q[m]-T[i+m]|$, where the objective is to find the index $i_{min}$ such that $D(i_{min})$ is minimized. Since we are dealing with multivariate data with $D$ dimensions, we extend the metric to sum differences across all dimensions: we compute $D(i) = \sum_{m=0}^{M-1} \sum_{k=0}^{D-1} |Q[m, k] - T[i+m, k]|$.
+The distance between the query and the input window is the Sum of Absolute Differences (SAD). If we use it within univariate data, if we are at the $i$-th time instant, and the query has a length of $M$, we compute the distance as $D(i)=\displaystyle\sum_{m=0}^{M-1}|Q[m]-T[i+m]|$, where the objective is to find the index $i_{min}$ such that $D(i_{min})$ is minimized. Since we are dealing with multivariate data with $D$ dimensions, we extend the metric to sum differences across all dimensions: we compute $D(i) = \sum_{m=0}^{M-1} \sum_{k=0}^{D-1} |Q[m, k] - T[i+m, k]|$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dataset}
 \label{sec:dataset}
-We selected the \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition} (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions per timestamp: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
+We selected the \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition} (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions per timestamp: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_Y}, \textit{acc\_Z}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
 
-The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps. In this scenario we concatenate the dataset samples to generate a continuous stream of multi-dimensional data points, resulting in a total of circa 7,9 million floating-point values to process.
+The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps. In this scenario, we concatenate the dataset samples to generate a continuous stream of multi-dimensional data points, resulting in a total of circa 7.9 million floating-point values to process.
 
-The result of this idea is that the dataset is downloaded in \texttt{data/input.txt} file, where each samples are concatenate and each element of one sample is rappresented by a line with 6 float value (the dimension of HAR), that are respectively \textit{acc\_X}, \textit{acc\_X}, \textit{acc\_X}, \textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}.
+The result is that the dataset is downloaded to the \texttt{data/input.txt} file, where all samples are concatenated. Each element of a sample is represented by a line with 6 float values (the dimensions of HAR), which are respectively \textit{acc\_X}, \textit{acc\_Y}, \textit{acc\_Z}, \textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}.
 
 \subsection{Multiplier}
 \label{sec:multiplier}
@@ -30,9 +30,9 @@ The mechanism is implemented as a pre-processing step during data download: the 
 To define the input and the query we have to address two aspects:
 \begin{itemize}
     \item Input \\
-        We concatenate all samples of the dataset, both the training and test partiotion. When the download script has finished the \textit{input.txt} file has the following format: each value of the same timestamp is separated from a single space; to time stamp are separated from the $\backslash$\textit{n} character.
+        We concatenate all samples of the dataset, both the training and test partitions. When the download script has finished the \textit{input.txt} file has the following format: each value of the same timestamp is separated by a single space; two timestamps are separated by the $\backslash$\textit{n} character.
 
-        We perform a data-augmentation process to increment the number of sample because our dataset was too small. We can define the number of copy (1 by default) and the noise added ($\pm$0.01 by default). The new sample is define as $new=old+\epsilon$, where $\epsilon\in[-0.01,0.01]$.
+        We perform a data-augmentation process to increment the number of samples because our dataset is too small. We can define the number of copies (1 by default) and the added noise ($\pm$0.01 by default). The new sample is defined as $new=old+\epsilon$, where $\epsilon\in[-0.01,0.01]$.
     \item Query \\
         We sample a random index of the input and extract a query of length $M$. The default choice for the length of the action is $M=64$, but it's also possible to specify it at compilation time. The data preparation script extracts this query, adds Gaussian noise ($\mu=0, \sigma=0.01$) to ensure $SAD > 0$, and saves it to \texttt{data/query.txt}. The original start index is reported by the script for verification.
 \end{itemize}
@@ -42,43 +42,43 @@ To define the input and the query we have to address two aspects:
 To validate and test our software we use two main tools: the sanitizers and the profiler.
 
 \subsection{Sanitizers}
-A sanitizer is a dynamic code analyzer integrated in the compiler that allow us to discover runtime errors in out code. The tool instruments the code to store metadata for each variable and this allow to detect runtime errors that the compiler can't see because it works in a static way.
+A sanitizer is a dynamic code analyzer integrated in the compiler that allows us to discover runtime errors in our code. The tool instruments the code to store metadata for each variable and this allows detecting runtime errors that the compiler can't see because it works in a static way.
 
-The sanitizer is useful during the development phase. In the release version we compile without the sanitizer because it introduces complexity and brings to a performance degradation.
+The sanitizer is useful during the development phase. In the release version we compile without the sanitizer because it introduces complexity and leads to performance degradation.
 
 \myskip
 
-The sanitizers tool that we used are the following:
+The sanitizer tools that we used are the following:
 \begin{itemize}
     \item Address (ASan) \\
-        Is useful for the detection of memory corruption errors like buffer overflow, use after free and memory leak.
+        It is useful for the detection of memory corruption errors like buffer overflow, use-after-free and memory leaks.
     \item Undefined (UBSan) \\
-        Is useful for the detection of undefined behavior in the code, i.e., portion of code that isn't conformant with the standard.
+        It is useful for the detection of undefined behavior in the code, i.e., portions of code that are not conformant to the standard.
     \item Memory (MSan) \\
-        Detects the use of uninitialized memory. In MacOS it isn't supported, but it is present anyway.
+        Detects the use of uninitialized memory. On macOS it is not supported, but it is present anyway.
 \end{itemize}
 
 \subsection{Profiler}
 \label{sec:profiler}
-Profiling is a technique for analysing the performance of our software: it is useful to understand where the code spends most of its time and how many functions are called.
+Profiling is a technique for analyzing the performance of our software: it is useful to understand where the code spends most of its time and how many times functions are called.
 
-There are two techniques that profilers use: sampling, that is more efficient but less precise; instrumentation, that is very accurate but more expensive.
+There are two techniques that profilers use: sampling, which is more efficient but less precise; and instrumentation, which is very accurate but more expensive.
 
 \myskip
 
-In our project we used the \href{https://developer.ridgerun.com/wiki/index.php/Profiling_with_GPerfTools}{GPerfTools}. We install it with HomeBrew, but this doesn't install the \textit{pprof} tool for the analysis. The new version was found \href{https://github.com/google/pprof}{here}, and it is developed by Google in Go.
+In our project we used \href{https://developer.ridgerun.com/wiki/index.php/Profiling_with_GPerfTools}{GPerfTools}. We install it with HomeBrew, but this doesn't install the \textit{pprof} tool for the analysis. The new version, found \href{https://github.com/google/pprof}{here}, is developed by Google in Go.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Execution}
 The execution of the project requires two steps:
 \begin{enumerate}
-    \item To download the input we have to exec the \texttt{exec/download\_input.sh} script. This Python script orchestrates the dataset preparation:
+    \item To download the input we have to execute the \texttt{exec/download\_input.sh} script. This Python script orchestrates the dataset preparation:
     \begin{itemize}
         \item Downloads the original UCI HAR Dataset (ZIP format) from the official repository.
         \item Extracts the raw inertial signals from the archive.
-        \item Processes the data concatenating the training and test sets.
-        \item Applies the data augmentation, as we said in Section~\ref{sec:multiplier}, to generate the final \texttt{data/input.txt} file used by the C++ application.
+        \item Processes the data by concatenating the training and test sets.
+        \item Applies data augmentation, as described in Section~\ref{sec:multiplier}, to generate the final \texttt{data/input.txt} file used by the C++ application.
         \item Extracts a random query sequence, applies noise, and saves it to \texttt{data/query.txt}, printing the ground truth index to standard output.
     \end{itemize}
-    \item Finally we can execute one the script in \texttt{exec/} folder. Which script depends on our interest: see \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
+    \item Finally we can execute one of the scripts in \texttt{exec/} folder. The choice of script depends on the specific requirement: see the \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
 \end{enumerate}

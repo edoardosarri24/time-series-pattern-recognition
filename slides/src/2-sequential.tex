@@ -1,46 +1,50 @@
 \section{Sequential}
+\subsection{Time Series Pattern Recognition}
+
+\begin{frame}{Sequential}
+        L'\href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/a9dfa266d9fea1eae1e7256da641cce54909b2f5/sequential/src/main.cpp}{esecuzione sequenziale} segue quattro step:
+        \begin{enumerate}
+            \item \textbf{Data Loading:} In \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/253e653c7d69c6c0e1f57485dc770105cea637ee/sequential/src/data_loader.cpp}{data\_loader.cpp} si carica il file di input.
+            \item \textbf{Query Loading:} In \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/a9dfa266d9fea1eae1e7256da641cce54909b2f5/sequential/src/query_loader.cpp}{query\_loader.cpp} si carica il file di query.
+            \item \textbf{Pattern Matching:} In \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/22d1be17d6c07ef18f6c2812267295253476a7bd/sequential/src/SAD_distance.cpp}{SAD\_distance.cpp} si calcola la distanza SAD trovando $i^*$.
+            \item \textbf{Reporting:} Si restituiscono le statiche e i risultati.
+        \end{enumerate}
+\end{frame}
 
 \begin{frame}{Sequential}
     \begin{block}{Data Loading}
         Il file di input può raggiungere grandi dimensioni ($\approx 3.5$ GB).
         \begin{itemize}
-            \item \textbf{Problema:} Overhead \texttt{std::ifstream} (copie multiple, syscall).
-            \item \textbf{Soluzione:} Memory Mapped I/O (\texttt{mmap}).
-            \item \textbf{Ottimizzazione:} \texttt{madvise} con flag \texttt{MADV\_SEQUENTIAL} per indicare l'accesso lineare al kernel.
+            \item \textbf{Problema:} Overhead con gli steam per copie multiple e system calls.
+            \item \textbf{Soluzione:} Memory Mapped I/O  con \texttt{mmap}.
+            \item \textbf{Ottimizzazione:} Si indica al kernel l'accesso sequenziale al file con \texttt{madvise} e il flag \texttt{MADV\_SEQUENTIAL}.
             \item \textbf{Risultato:} Parsing ridotto da $\approx 47s$ a $\approx 13s$.
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}{Sequential}
-    \begin{block}{Memory Layout - Array of Structures (AoS)}
-        Struttura contigua per ogni timestamp: $[x_{1,1}, \dots, x_{1,D}, x_{2,1}, \dots]$.
+    \begin{block}{Memory Layout}
+        AoS memory pattern: $[x_{i,1}, \dots, x_{i,D}, x_{i+1,1}, \dots], i\in[0, N-D]$.
         \begin{itemize}
-            \item \textbf{Vantaggio:} Località spaziale ottimizzata per la sliding window.
-            \item \textbf{Vectorization:} Uso di \texttt{-march=native} e keyword \texttt{restrict} per permettere al compilatore l'auto-vettorizzazione SIMD.
-        \end{itemize}
-    \end{block}
-    \begin{block}{Padding}
-        Allineamento dei dati alla cache line (64 Byte).
-        \begin{itemize}
-            \item Aggiunta di dimensioni fittizie per portare la dimensione del singolo timestamp a divisori di 64B.
-            \item \textit{Nota:} L'analisi sperimentale ha mostrato che l'overhead di processare dati inutili supera i benefici dell'allineamento in questo caso specifico.
+            \item \textbf{Vantaggio:} Località spaziale.
+            \item \textbf{Accesso:} Con $Index(t,d) = buffer[t\cdot D + d]$.
+            \item \textbf{Vettorializzazione:} Compiling con flaf \texttt{-march=native} e keyword \texttt{restrict} per permettere eliminare ambiguità al compilatore.
+            \item \textbf{Padding:} Allineamento dei dati a multipli di 64 Byte:
+            \begin{itemize}
+                \item 6 float per timestamp $\Rightarrow$ 24B.
+                \item Aggiunti 2 float fittizi per raggiungere 32B per timestamp.
+            \end{itemize}
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}{Sequential}
-    \begin{block}{Algoritmo SAD}
-        Brute Force Sliding Window.
-        \[
-        i^* = \arg\min_{i \in [0, N-M]} D(i)
-        \]
-    \end{block}
     \begin{block}{Early Abandoning}
         Interruzione del calcolo della distanza se la somma parziale supera il minimo globale corrente.
         \begin{itemize}
             \item \textbf{Speedup:} $\approx 2.87\times$ se attivato.
-            \item \textbf{Baseline:} Disattivato per confronto equo ("apple-to-apple") con la versione GPU (dove la divergenza dei thread lo rende inefficace).
+            \item \textbf{Baseline:} Disattivato per confronto equo con la versione parallela.
         \end{itemize}
     \end{block}
 \end{frame}

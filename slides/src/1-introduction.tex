@@ -18,25 +18,15 @@
 \end{frame}
 
 \begin{frame}{Introduction}
-    \begin{block}{Approccio}
-        \textbf{Sliding Window}: per ogni istante temporale $i$ si calcola la distanza tra la query e la porzione di input della stessa lunghezza.
-    \end{block}
-    \begin{block}{Distanza}
-        \textbf{Sum of Absolute Differences} (SAD). Date $D$ dimensioni:
-        \begin{equation*}
-            D(i) = \sum_{m=0}^{M-1} \sum_{d=0}^{D-1} |Q[m, d] - T[i+m, d]|
-        \end{equation*}
-        L'obiettivo è trovare $i^* = \displaystyle\arg\min_i D(i)$.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Introduction}
     \begin{block}{Dataset}
         \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition (HAR)} dataset: cattura il movimento di umani in gionate tipo con i sensori dello smartphone.
         \begin{itemize}
             \item Dimensioni: 6 (3 acc + 3 gyro).
-            \item Samples: 2.56s a 50Hz; 10299 istanze da 2.56s, cioè da 128 timestamps.
+            \item Samples: 2.56s a 50Hz; 10299 istanze da 128 timestamps.
         \end{itemize}
+    \end{block}
+    \begin{block}{Approccio}
+        \textbf{Sliding Window}: per ogni istante temporale $i$ si calcola la distanza tra la query e la porzione di input della stessa lunghezza.
     \end{block}
 \end{frame}
 
@@ -54,5 +44,18 @@
                 \item Aggiunto rumore Gaussiano con $\mu=0, \sigma=0.01$ per avere $SAD>0$.
             \end{itemize}
         \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Introduction}
+    \begin{block}{Distanza}
+        \textbf{Sum of Absolute Differences} (SAD). Date $D$ dimensioni:
+        \begin{equation*}
+            D(i) = \sum_{m=0}^{M-1} \sum_{d=0}^{D-1} |Q[m, d] - T[i+m, d]|
+        \end{equation*}
+        L'obiettivo è trovare $i^* = \displaystyle\arg\min_i D(i)$.
+    \end{block}
+    \begin{block}{Sanitizer}
+        Per trovare erorri a run-time è stato usato \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/3544216290ac2ef624417e489b20ebed9bae3b58/exec/AUBsanitizer.sh}{AUBSan}
     \end{block}
 \end{frame}
