@@ -1,49 +1,58 @@
 \section{Introduction}
+\subsection{Time Series Pattern Recognition}
 
 \begin{frame}{Introduction}
-    \begin{block}{Obiettivo}
-        Implementazione in C++ di un algoritmo per il riconoscimento di pattern in serie temporali multivariate.
-        \begin{itemize}
-            \item \textbf{Input:} Serie temporale $T$ di lunghezza $N$.
-            \item \textbf{Query:} Pattern $Q$ di lunghezza $M$ ($M \ll N$).
-            \item \textbf{Output:} Indice $i$ che minimizza la distanza tra $Q$ e la finestra temporale in $T$.
-        \end{itemize}
-    \end{block}
+    Algoritmo per il riconoscimento di pattern in serie temporali:
+    \begin{itemize}
+        \item Input: Serie temporale $T$ con $N$ timestamps.
+        \item Query: Pattern $Q$ di lunghezza $M$ ($M \ll N$).
+        \item Output: Indice $i$ che minimizza la distanza tra $Q$ e $T$.
+    \end{itemize}
     \begin{block}{Versioni}
         Sono state realizzate due implementazioni:
-        \begin{enumerate}
-            \item \textbf{Sequenziale:} CPU based.
-            \item \textbf{Parallela:} GPU based (CUDA).
-        \end{enumerate}
+        \begin{itemize}
+            \item Sequenziale e CPU-based.
+            \item Parallela e GPU-based (CUDA).
+        \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}{Introduction}
     \begin{block}{Approccio}
-        Utilizzo di una \textbf{Sliding Window}: per ogni istante temporale $i$ si calcola la distanza tra la query e la porzione di input corrispondente.
+        \textbf{Sliding Window}: per ogni istante temporale $i$ si calcola la distanza tra la query e la porzione di input della stessa lunghezza.
     \end{block}
-    \begin{block}{Metrica: SAD}
-        Sum of Absolute Differences (SAD). Per dati multivariati con $D$ dimensioni:
-        \[
-        D(i) = \sum_{m=0}^{M-1} \sum_{k=0}^{D-1} |Q[m, k] - T[i+m, k]|
-        \]
-        L'obiettivo è trovare $i_{min} = \arg\min_i D(i)$.
+    \begin{block}{Distanza}
+        \textbf{Sum of Absolute Differences} (SAD). Date $D$ dimensioni:
+        \begin{equation*}
+            D(i) = \sum_{m=0}^{M-1} \sum_{d=0}^{D-1} |Q[m, d] - T[i+m, d]|
+        \end{equation*}
+        L'obiettivo è trovare $i^* = \displaystyle\arg\min_i D(i)$.
     \end{block}
 \end{frame}
 
 \begin{frame}{Introduction}
     \begin{block}{Dataset}
-        \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition (HAR)} dataset.
+        \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition (HAR)} dataset: cattura il movimento di umani in gionate tipo con i sensori dello smartphone.
         \begin{itemize}
-            \item \textbf{Dimensioni ($D$):} 6 (3 acc + 3 gyro).
-            \item \textbf{Frequenza:} 50Hz.
-            \item \textbf{Preprocessing:} Concatenazione di training e test set + Data Augmentation.
+            \item Dimensioni: 6 (3 acc + 3 gyro).
+            \item Samples: 2.56s a 50Hz; 10299 istanze da 2.56s.
         \end{itemize}
     \end{block}
+\end{frame}
+
+\begin{frame}{Introduction}
     \begin{block}{Input e Query}
         \begin{itemize}
-            \item \textbf{Input:} Stream continuo generato concatenando i campioni e applicando un moltiplicatore con rumore uniforme.
-            \item \textbf{Query:} Sottosequenza estratta casualmente dall'input con aggiunta di rumore Gaussiano ($\mu=0, \sigma=0.01$).
+            \item Input:
+            \begin{itemize}
+                \item Concatenazione di training e test set.
+                \item Data augmentation: Più istanze aggiungendo un rumore uniforme $\epsilon=\pm0.01$.
+            \end{itemize}
+            \item Query:
+            \begin{itemize}
+                \item Sottosequenza estratta casualmente dall'input.
+                \item Aggiunto rumore Gaussiano con $\mu=0, \sigma=0.01$ per avere $SAD>0$.
+            \end{itemize}
         \end{itemize}
     \end{block}
 \end{frame}
