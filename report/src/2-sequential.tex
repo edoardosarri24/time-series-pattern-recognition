@@ -32,7 +32,7 @@ Additionally, since the parsing logic accesses memory strictly linearly, we util
 \label{sec:seq_memory}
 For the sequential implementation, we adopt the Array of Structures (AoS) layout. In this configuration, all $D$ dimensions of a single timestamp are stored contiguously in memory: the dataset is represented as a flat vector like $[x[1,1],\cdots,x[1,D],x[2,1], \\ \cdots,x[2,D],\cdots,x[N,1],\cdots,x[N,D]]$. If we want to access the $d$-th dimension of the $t$-th timestamp element, we can use $f(t,d) = buffer[t \cdot D + d]$.
 
-Since we adopt a sliding window approach, this memory pattern technique allows us to maximize spatial locality during the distance calculation. The algorithm, described in Section~\ref{sec:seq_distance}, in fact has an inner loop through the $D$ dimension, and an outer loop through the input length $N$; when we load into the cache the $d$-th dimension of the $t$-th timestamp, we also load the neighboring values in the same cache line, and these values are processed in the next iterations.
+Since we adopt a sliding window approach, this memory pattern technique allows us to maximize spatial locality during the distance calculation. The algorithm, described in Section~\ref{sec:distance}, in fact has an inner loop through the $D$ dimension, and an outer loop through the input length $N$; when we load into the cache the $d$-th dimension of the $t$-th timestamp, we also load the neighboring values in the same cache line, and these values are processed in the next iterations.
 
 \subsection{Vectorization}
 This structure of the data allows us to implement an auto-vectorization without writing assembly code. With the correct compiling flags (i.e., \texttt{-march=native} and \texttt{-O3}), the compiler generates specific instructions for the host CPU.
@@ -51,11 +51,7 @@ This padding approach doesn't change the SAD distance result, but allows us to r
 The above concept is correct in theory, but the real test shows different results. The Section~\ref{sec:analysis_padding} shows these results.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{SAD distance}
-\label{sec:seq_distance}
-The SAD metric calculation is performed using a Brute-Force Sliding Window approach. Let $Q$ be the query of length $M$; we search for the starting index $i^*$ that minimizes the distance: $\displaystyle i^*=\arg\min_{i\in[0,N-M]}D(i)$, where $\displaystyle D(i)=\sum_{m=0}^{M} \sum_{d=0}^{D} |Q[m,d] - T[i+m,d]|$.
-
-\subsection{Early Abandoning}
+\section{Early Abandoning}
 \label{sec:seq_earling_abandoning}
 To optimize the sequential execution, we usually implement an early abandoning approach: during the computation of $D(i)$, we maintain the current distance; if the partial local sum exceeds the current global minimum distance found ($min\_dist$), the computation for the current window $i$ is immediately halted.
 

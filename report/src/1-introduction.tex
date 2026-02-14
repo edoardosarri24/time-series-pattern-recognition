@@ -5,9 +5,10 @@ This is the \href{https://github.com/edoardosarri24/time-series-pattern-recognit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Approach}
+\label{sec:distance}
 To find the best match the approach used is the sliding window: for each time instant we compute a distance between the query and the input. After this we return the best part of the input that is closest to the query. If $Q$ is the length of the query and $I$ is the length of the input, we have $I\gg Q$).
 
-The distance between the query and the input window is the Sum of Absolute Differences (SAD). If we use it within univariate data, if we are at the $i$-th time instant, and the query has a length of $M$, we compute the distance as $D(i)=\displaystyle\sum_{m=0}^{M-1}|Q[m]-T[i+m]|$, where the objective is to find the index $i_{min}$ such that $D(i_{min})$ is minimized. Since we are dealing with multivariate data with $D$ dimensions, we extend the metric to sum differences across all dimensions: we compute $D(i) = \sum_{m=0}^{M-1} \sum_{k=0}^{D-1} |Q[m, k] - T[i+m, k]|$.
+The distance between the query and the input window is the Sum of Absolute Differences (SAD). Let $Q$ be the query of length $M$; we search for the starting index $i^*$ that minimizes the distance: $\displaystyle i^*=\arg\min_{i\in[0,N-M]}D(i)$, where $\displaystyle D(i)=\sum_{m=0}^{M} \sum_{d=0}^{D} |Q[m,d] - T[i+m,d]|$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dataset}
