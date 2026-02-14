@@ -45,6 +45,7 @@ Use the scripts in the `exec/` directory to build and run the project automatica
     *   `./exec/Msanitizer.sh [seq|par]` - Runs with Memory Sanitizer (Linux only).
 
 ### Structures
+```
 .
 ├── CMakeLists.txt
 ├── README.md
@@ -63,3 +64,4 @@ Use the scripts in the `exec/` directory to build and run the project automatica
 ├── sequential/ - Source code for the sequential C++ implementation
 ├── slides/ - Source code for the slides (LaTeX)
 └── slides.pdf - Presentation slides
+```
