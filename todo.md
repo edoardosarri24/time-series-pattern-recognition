@@ -1,3 +1,1 @@
-- la query deve essere un file.
-- L'indice della serie estratto casualmente deve essere un multiplo di 128 per iniziare dall'inizio del movimento
-- generalizzare su dimensioni diverse?
+- rivedi script python

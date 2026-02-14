@@ -11,7 +11,7 @@ target_compile_definitions(parallel_pattern_recognition PRIVATE BLOCK_SIZE_VAL=$
 target_sources(parallel_pattern_recognition PRIVATE
     src/main.cpp
     src/data_loader.cpp
-    src/query_generator.cpp
+    src/query_loader.cpp
     src/kernel.cu
 )
 

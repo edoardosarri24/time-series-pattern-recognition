@@ -34,7 +34,7 @@ To define the input and the query we have to address two aspects:
 
         We perform a data-augmentation process to increment the number of sample because our dataset was too small. We can define the number of copy (1 by default) and the noise added ($\pm$0.01 by default). The new sample is define as $new=old+\epsilon$, where $\epsilon\in[-0.01,0.01]$.
     \item Query \\
-        We sample a casual index of the input and take a query of Lenght $M$. The default choice for the lenght of the action is $M=64$, but it's also possible to specifie it at compilation time; by deafult we are evaluating 1,28 second of data and search the closest part of action in the dataset. We add to this query a Gaussian noise to ensure that $SAD > 0$. This perturbation is obtain from a Normal Distribution with $\mu=0$ and $\sigma=0.01$; this garantee the robustness of our approach.
+        We sample a random index of the input and extract a query of length $M$. The default choice for the length of the action is $M=64$, but it's also possible to specify it at compilation time. The data preparation script extracts this query, adds Gaussian noise ($\mu=0, \sigma=0.01$) to ensure $SAD > 0$, and saves it to \texttt{data/query.txt}. The original start index is reported by the script for verification.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,6 +78,7 @@ The execution of the project requires two steps:
         \item Extracts the raw inertial signals from the archive.
         \item Processes the data concatenating the training and test sets.
         \item Applies the data augmentation, as we said in Section~\ref{sec:multiplier}, to generate the final \texttt{data/input.txt} file used by the C++ application.
+        \item Extracts a random query sequence, applies noise, and saves it to \texttt{data/query.txt}, printing the ground truth index to standard output.
     \end{itemize}
     \item Finally we can execute one the script in \texttt{exec/} folder. Which script depends on our interest: see \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
 \end{enumerate}

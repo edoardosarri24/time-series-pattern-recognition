@@ -19,7 +19,7 @@ endif()
 target_sources(sequential_pattern_recognition PRIVATE
     src/main.cpp
     src/data_loader.cpp
-    src/query_generator.cpp
+    src/query_loader.cpp
     src/SAD_distance.cpp
 )
 

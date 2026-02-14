@@ -10,12 +10,12 @@ Supposing that the file already is in \texttt{data/input.txt}, out sequential ve
 \begin{enumerate}
     \item Data Loading \\
         We allocate memory and load in it the input file. We reorganized the data into a Array of Structures (AoS) memory pattern. Implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/sequential_documentation/sequential/src/data_loader.cpp}{data\_loader.cpp} file.
-    \item Query Generation \\
-        We extract a subsequence of lenght $M$ as the query. As described in Section~\ref{sec:input}, we add to this subsequence a Gaussin noice ($\mu=0, \sigma=0.01$) to avoid that the SAD distance is $SAD=0$, i.e. that the query is not exactly the same of our input subsequence. In the code there is a seed to allow the reproducibility of the code; we use the seed 78 for our experiments. The implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/sequential_documentation/sequential/src/query_generator.cpp}{query\_generator.cpp} file. This step return also the start index used for extraction.
+    \item Query Loading \\
+        We load the query sequence of length $M$ from the file \textit{data/query.txt}. As described in Section~\ref{sec:input}, the noise generation and extraction are handled by the external data preparation script. The implementation is in \texttt{query\_loader.cpp} file.
     \item Pattern Matching \\
         We use a sliding window to scan the input, calculating a SAD of lenght $M$ for each istant time. The implementation is in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/730e3003e125bb1180bfccfef96649d08320eafd/sequential/src/SAD_distance.cpp}{SAD\_distance.cpp} file.
     \item Reporting \\
-        We return the index of the best match and the relative SAD value. For verification purposes, we also display the ground truth index (the start index of the query).
+        We return the index of the best match and the relative SAD value. The ground truth index is displayed by the data generation script for manual verification.
 \end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

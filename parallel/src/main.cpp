@@ -1,6 +1,6 @@
 #include "common.hpp"
 #include "data_loader.hpp"
-#include "query_generator.hpp"
+#include "query_loader.hpp"
 #include "cuda_utils.cuh"
 #include "kernel.cuh"
 #include <iostream>
@@ -15,10 +15,11 @@ int main(int argc, char** argv) {
 
     // Argoument check.
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <input_file> [query_file]" << std::endl;
         return EXIT_FAILURE;
     }
     std::string filename = argv[1];
+    std::string query_file = (argc > 2) ? argv[2] : "data/query.txt";
 
     // Data loading.
     auto start_load = std::chrono::high_resolution_clock::now();
@@ -37,9 +38,15 @@ int main(int argc, char** argv) {
     auto end_load = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_load = end_load - start_load;
 
-    // Query generation.
+    // Query loading.
     auto start_query_gen = std::chrono::high_resolution_clock::now();
-    auto [query_soa, ground_truth_idx] = query_generator::generate(loader.get_aos_data(), 78);
+    std::vector<float> query_soa;
+    try {
+        query_soa = query_loader::load(query_file);
+    } catch (const std::exception& e) {
+        std::cerr << "Error loading query: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
     auto end_query_gen = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_query_gen = end_query_gen - start_query_gen;
 
@@ -96,13 +103,12 @@ int main(int argc, char** argv) {
 
     // Reporting
     std::cout << "\n--- Matching results ---\n";
-    std::cout << "Ground Truth Index: " << ground_truth_idx << std::endl;
     std::cout << "Best Match Index: " << best_index << std::endl;
     std::cout << "SAD Value: " << min_sad << std::endl;
     std::cout << "\n--- Timing sesults ---\n";
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "Data Loading Time:          " << elapsed_load.count() << " s\n";
-    std::cout << "Query Generation Time:      " << elapsed_query_gen.count() << " s\n";
+    std::cout << "Query Loading Time:         " << elapsed_query_gen.count() << " s\n";
     std::cout << "Device Allocation Time:     " << elapsed_dev_alloc.count() << " s\n";
     std::cout << "H2D Transfer Time:          " << elapsed_h2d_transfer.count() << " s\n";
     std::cout << "Kernel Execution Time:      " << elapsed_kernel_exec.count() << " s\n";

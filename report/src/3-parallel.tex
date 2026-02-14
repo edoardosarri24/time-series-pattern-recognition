@@ -39,6 +39,8 @@ The execution flow is designed to orchestrate the Host-Device collaboration, min
 \begin{enumerate}
     \item Data loading  (Host) \\
         The Host loads the input data using the efficient Memory Mapped I/O (\texttt{mmap}) strategy, identical to the sequential version described in Section~\ref{sec:data_loading}. Since the raw file is in AoS format, the Host iterates through the mapped memory and transposes the data into the SoA layout. In this case we also have to solve the paging potential problem: we have to prevent that the host OS shfit the data to the disk during the traner from the CPU memory to the GPU memory. This is addressable tanks to the pinned-memory: we have to say to the host OS that that memory cann't be pageable.
+    \item Query Loading (Host) \\
+        The Host loads the query vector $Q$ from \texttt{data/query.txt}. The query data is then uploaded to the GPU Constant Memory.
     \item Index definition (Device) \\
         The first step for each thread is to define the index of the timestamp on which it will work. Since we may initialize more threads than the number of timestamps, each thread must verify if its index is out of boundaries, i.e. if $tid \geq (N - M)$, where $N$ is the length of the input and $M$ of the query.
     \item Local accumulation (Device) \\
