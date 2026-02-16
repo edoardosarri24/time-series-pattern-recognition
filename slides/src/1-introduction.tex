@@ -1,23 +1,26 @@
 \section{Introduction}
 \subsection{Time Series Pattern Recognition}
 
-\begin{frame}{Introduction}
+\begin{frame}{Introduzione}
     Algoritmo per il riconoscimento di pattern in serie temporali:
     \begin{itemize}
-        \item Input: Serie temporale $T$ con $N$ timestamps.
-        \item Query: Pattern $Q$ di lunghezza $M$ ($M \ll N$).
-        \item Output: Indice $i$ che minimizza la distanza tra $Q$ e $T$.
+        \item Input:
+        \begin{itemize}
+            \item Dati: Serie temporale $T$ con $N$ timestamps.
+            \item Query: Pattern $Q$ di lunghezza $M$ ($M \ll N$).
+        \end{itemize}
+        \item Output: Indice $i^*$ che minimizza la distanza tra $Q$ e $T$.
     \end{itemize}
     \begin{block}{Versioni}
         Sono state realizzate due implementazioni:
         \begin{itemize}
-            \item Sequenziale e CPU-based.
-            \item Parallela e GPU-based (CUDA).
+            \item Sequenziale.
+            \item Parallela (CUDA).
         \end{itemize}
     \end{block}
 \end{frame}
 
-\begin{frame}{Introduction}
+\begin{frame}{Introduzione}
     \begin{block}{Dataset}
         \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition (HAR)} dataset: cattura il movimento di umani in gionate tipo con i sensori dello smartphone.
         \begin{itemize}
@@ -30,7 +33,7 @@
     \end{block}
 \end{frame}
 
-\begin{frame}{Introduction}
+\begin{frame}{Introduzione}
     \begin{block}{Input e Query}
         \begin{itemize}
             \item Input:
@@ -47,7 +50,7 @@
     \end{block}
 \end{frame}
 
-\begin{frame}{Introduction}
+\begin{frame}{Introduzione}
     \begin{block}{Distanza}
         \textbf{Sum of Absolute Differences} (SAD). Date $D$ dimensioni:
         \begin{equation*}

@@ -4,9 +4,9 @@
 \begin{frame}{Parallel}
         L'\href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/a9dfa266d9fea1eae1e7256da641cce54909b2f5/parallel/src/main.cpp}{esecuzione parallela} segue i seguenti step:
         \begin{enumerate}
-            \item \textbf{Data Loading:} Caricamento dati e query. Come nella versione sequenziale, ma in più si una pinned memory.
+            \item \textbf{Data Loading:} Caricamento \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/ad87a0253ee835e58eb0952dae458c5aa90ee3a1/parallel/src/data_loader.cpp}{dati} e \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/a9dfa266d9fea1eae1e7256da641cce54909b2f5/parallel/src/query_loader.cpp}{query}. Come nella versione sequenziale, ma in più si una pinned memory.
             \item \textbf{Trasferimento H2D:} Si carica in GPU i dati grezzi.
-            \item \textbf{Kernel:} Ogni thread calcola la SAD per un timestamp.
+            \item \textbf{Kernel:} Ogni thread \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/af609693f2d00e4c02d028b127c87bc5454f72d8/parallel/src/kernel.cu}{calcola} la SAD per un timestamp.
             \item \textbf{Trasferimento D2H:} Si porta in memoria host i risultati parziali.
             \item \textbf{Final Reduction:} L'Host cerca il minimo globale tra i candidati ricevuti dalla GPU.
         \end{enumerate}

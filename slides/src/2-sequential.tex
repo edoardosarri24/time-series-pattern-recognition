@@ -13,7 +13,7 @@
 
 \begin{frame}{Sequential}
     \begin{block}{Data Loading}
-        Il file di input può raggiungere grandi dimensioni ($\approx 3.5$ GB).
+        Il file di input può raggiungere grandi dimensioni ($\approx 3.5$ GB per gli esperimenti).
         \begin{itemize}
             \item \textbf{Problema:} Overhead con gli steam per copie multiple e system calls.
             \item \textbf{Soluzione:} Memory Mapped I/O  con \texttt{mmap}.
