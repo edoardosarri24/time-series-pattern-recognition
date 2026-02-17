@@ -37,14 +37,14 @@ Since we adopt a sliding window approach, this memory pattern technique allows u
 \subsection{Vectorization}
 This structure of the data allows us to implement an auto-vectorization without writing assembly code. With the \texttt{-march=native} and \texttt{-O3} compiling flags, the compiler generates specific instructions for the host CPU.
 
-However, we have to give a hint to the compiler that we are sure that vectorization is possible. In particular, we have to declare the \texttt{restrict} clause in \texttt{find\_best\_match} in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/f43737e7a58e0ead58fde8862c04cf7b19551603/sequential/src/SAD_distance.cpp}{SAD\_distance.cpp} file to unlock full SIMD operations: in this way we inform the compiler that the \texttt{data} and \texttt{query} arrays never overlap.
+However, we have to give a hint to the compiler that we are sure that vectorization is possible. In particular, we have to declare the \texttt{restrict} clause in \texttt{find\_best\_match} and \texttt{compute\_SAD} in \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/master/sequential/src/SAD_distance.cpp}{SAD\_distance.cpp} file to unlock full SIMD operations: in this way we inform the compiler that the \texttt{data} and \texttt{query} arrays never overlap.
 
 \subsection{Padding}
 \label{sec:seq_padding}
 
 Our data is a collection of float numbers and for each timestamp we have $D=6$ dimensions; we can see the data like a $N\times D$ matrix, where $N$ is the number of elements. The cache lines are typically composed of 64 Bytes and the CPU works better if the data are aligned with this value. Since a float is loaded in 4 Bytes, 6 floats occupies 24 Byte; we can optimize the performance introducing two more dimensions (i.e., two more floats) so that one timestamp occupies 32 Byte in the cache line.
 
-This padding approach doesn't change the SAD distance result, but allows us to reduce cache misses and also optimize the vectorization described above. On the other hand, we have a waste of memory of 25\% due to padding. We implemented an automatic padding mechanism that adjusts the inner dimension of the dataset to be a divisor of the cache line size (typically 64 Bytes). This alignment ensures that data loads are efficient and fully utilize the memory bandwidth.
+This padding approach doesn't change the SAD distance result, but allows us to reduce cache misses and also optimize the vectorization described above. On the other hand, we have a waste of memory of 25\% due to padding. We \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/69a241f9725884cca0214c8def6c5e3164b437f2/sequential/include/common.hpp}{implemented} an automatic padding mechanism that adjusts the inner dimension of the dataset to be a divisor of the cache line size (typically 64 Bytes). This alignment ensures that data loads are efficient and fully utilize the memory bandwidth.
 
 \myskip
 
@@ -53,7 +53,7 @@ The above concept is correct in theory, but the real test shows different result
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Early Abandoning}
 \label{sec:seq_earling_abandoning}
-To optimize the sequential execution, we usually implement an early abandoning approach: during the computation of $D(i)$, we maintain the current distance; if the partial local sum exceeds the current global minimum distance found ($min\_dist$), the computation for the current window $i$ is immediately halted.
+To optimize the sequential execution, we usually implement an early abandoning approach: we maintain the best current distance; during the computation of $D(i)$ if the partial local sum exceeds the current global minimum distance found, the computation for the current window $i$ is immediately halted.
 
 However, this technique creates a significant algorithmic disparity when comparing with a parallel GPU implementation, as we want to compare "apples to apples". On the GPU, thread divergence makes early abandoning less effective or counter-productive for this specific kernel structure. Thus, we have parameterized it with the \texttt{ENABLE\_EARLY\_ABANDONING} compilation flag, which is \texttt{false} by default.
 
