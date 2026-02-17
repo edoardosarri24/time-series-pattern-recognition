@@ -1,42 +1,36 @@
 \chapter{Introduction}
-This project is about the C++ implementation of a program that, given a pattern (i.e., a query), finds the closest subsequence in a time series input. There are two implementations: the first is a sequential approach, described in Chapter~\ref{cap:sequential}; the second uses the CUDA framework, described in Chapter~\ref{cap:parallel}, to obtain the maximum speed-up.
+This project is about the C++ implementation of a program that, given a pattern (i.e., a query), finds the closest subsequence in a time series input. There are two implementations: the first is a sequential approach, described in Chapter~\ref{cap:sequential}; the second, that uses the CUDA framework, is described in Chapter~\ref{cap:parallel}.
 
 This is the \href{https://github.com/edoardosarri24/time-series-pattern-recognition}{repository} of the project.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Approach}
 \label{sec:distance}
-To find the best match the approach used is the sliding window: for each time instant we compute a distance between the query and the input. After this we return the best part of the input that is closest to the query. If $Q$ is the length of the query and $I$ is the length of the input, we have $I\gg Q$).
+To find the best match we used sliding window approach: for each time instant we compute a distance between the query and the input. After this calcolus, we return the best part of the input that is closest to the query. If $M$ is the length of the query and $N$ is the length of the input, we have $N\gg M$.
 
-The distance between the query and the input window is the Sum of Absolute Differences (SAD). Let $Q$ be the query of length $M$; we search for the starting index $i^*$ that minimizes the distance: $\displaystyle i^*=\arg\min_{i\in[0,N-M]}D(i)$, where $\displaystyle D(i)=\sum_{m=0}^{M} \sum_{d=0}^{D} |Q[m,d] - T[i+m,d]|$.
+The distance between the query and the input window is the Sum of Absolute Differences (SAD):we are looking for the starting index $i^*$ that minimizes that distance; so we are looking fot $\displaystyle i^*=\arg\min_{i\in[0,N-M]}D(i)$, where $\displaystyle D(i)=\sum_{m=0}^{M} \sum_{d=0}^{D} |Q[m,d] - T[i+m,d]|$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dataset}
 \label{sec:dataset}
-We selected the \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition} (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions per timestamp: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_Y}, \textit{acc\_Z}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
+We selected the \href{https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones}{Human Activity Recognition} (HAR) dataset. This is a multivariate time-series dataset with $D=6$ dimensions: 3-axial linear acceleration (\textit{acc\_X}, \textit{acc\_Y}, \textit{acc\_Z}) and 3-axial angular velocity (\textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}).
 
-The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps. In this scenario, we concatenate the dataset samples to generate a continuous stream of multi-dimensional data points, resulting in a total of circa 7.9 million floating-point values to process.
+The dataset consists of 10299 samples (7352 for training and 2947 for testing). Each sample captures 2.56 seconds of activity recorded at 50Hz, resulting in a window length of 128 timestamps.
 
-The result is that the dataset is downloaded to the \texttt{data/input.txt} file, where all samples are concatenated. Each element of a sample is represented by a line with 6 float values (the dimensions of HAR), which are respectively \textit{acc\_X}, \textit{acc\_Y}, \textit{acc\_Z}, \textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}.
+We concatenate the dataset samples to generate a continuous multi-dimensional data points, resulting in a total of circa 7.9 million floating-point values to process. The result of thi spre-processing generate the \texttt{data/input.txt} file, where all samples are concatenated. Each element of a sample is represented by a line with 6 float values (the dimensions of HAR), which are respectively \textit{acc\_X}, \textit{acc\_Y}, \textit{acc\_Z}, \textit{gyro\_X}, \textit{gyro\_Y}, \textit{gyro\_Z}. These float values are separated by a \texttt{n} character.
 
 \subsection{Multiplier}
 \label{sec:multiplier}
 To address the limited size of the original dataset the system includes a data augmentation mechanism controlled by a \textit{multiplier M}.
 
-The mechanism is implemented as a pre-processing step during data download: the system iterates through the complete set of original samples \texttt{M} times; the first iteration preserves the original raw values; for every subsequent iteration required to reach the target multiplication factor, the system generates a new variation of the entire dataset, by injecting uniform random noise $\epsilon$ (by default $\epsilon\pm0.01$) into the signal values.
+The mechanism is implemented as a pre-processing step during data download: the system iterates through the complete set of original samples \texttt{M} times; the first iteration preserves the original raw values; for every subsequent iteration required to reach the target multiplication factor, the system generates a new variation of the entire dataset, by injecting uniform random noise $\epsilon$ (by default $\epsilon\pm0.01$, we can spiefied at compilation time) into the signal values.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Input and query}
+\section{Query}
 \label{sec:input}
-To define the input and the query we have to address two aspects:
-\begin{itemize}
-    \item Input \\
-        We concatenate all samples of the dataset, both the training and test partitions. When the download script has finished the \textit{input.txt} file has the following format: each value of the same timestamp is separated by a single space; two timestamps are separated by the $\backslash$\textit{n} character.
+We sample a random index of the input and extract a query of length $M$; the index is a multiple of 128, i.e. the lenght of a input sample. The default choice for the length of the action is $M=64$, but it's also possible to specify it at compilation time.
 
-        We perform a data-augmentation process to increment the number of samples because our dataset is too small. We can define the number of copies (1 by default) and the added noise ($\pm$0.01 by default). The new sample is defined as $new=old+\epsilon$, where $\epsilon\in[-0.01,0.01]$.
-    \item Query \\
-        We sample a random index of the input and extract a query of length $M$. The default choice for the length of the action is $M=64$, but it's also possible to specify it at compilation time. The data preparation script extracts this query, adds Gaussian noise ($\mu=0, \sigma=0.01$) to ensure $SAD > 0$, and saves it to \texttt{data/query.txt}. The original start index is reported by the script for verification.
-\end{itemize}
+The data preparation script extracts this query, adds Gaussian noise ($\mu=0, \sigma=0.01$) to ensure $SAD > 0$, and saves it to \texttt{data/query.txt}. The original start index is reported by the script for verification.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Tools}
@@ -65,10 +59,6 @@ Profiling is a technique for analyzing the performance of our software: it is us
 
 There are two techniques that profilers use: sampling, which is more efficient but less precise; and instrumentation, which is very accurate but more expensive.
 
-\myskip
-
-In our project we used \href{https://developer.ridgerun.com/wiki/index.php/Profiling_with_GPerfTools}{GPerfTools}. We install it with HomeBrew, but this doesn't install the \textit{pprof} tool for the analysis. The new version, found \href{https://github.com/google/pprof}{here}, is developed by Google in Go.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Execution}
 The execution of the project requires two steps:
@@ -78,8 +68,8 @@ The execution of the project requires two steps:
         \item Downloads the original UCI HAR Dataset (ZIP format) from the official repository.
         \item Extracts the raw inertial signals from the archive.
         \item Processes the data by concatenating the training and test sets.
-        \item Applies data augmentation, as described in Section~\ref{sec:multiplier}, to generate the final \texttt{data/input.txt} file used by the C++ application.
+        \item Applies data augmentation, as described in Section~\ref{sec:multiplier}, to generate the final \texttt{data/input.txt} file.
         \item Extracts a random query sequence, applies noise, and saves it to \texttt{data/query.txt}, printing the ground truth index to standard output.
     \end{itemize}
-    \item Finally we can execute one of the scripts in \texttt{exec/} folder. The choice of script depends on the specific requirement: see the \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/fff8378275881160eefdc64ad2dfffec7894f612/README.md}{README} for more details.
+    \item Finally we can execute one of the scripts in \texttt{exec/} folder. The choice of script depends on the specific requirement: see the \href{https://github.com/edoardosarri24/time-series-pattern-recognition/blob/master/README.md}{README} for more details.
 \end{enumerate}

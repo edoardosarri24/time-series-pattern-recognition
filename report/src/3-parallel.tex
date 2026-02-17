@@ -21,7 +21,7 @@ In GPU programming, it is important to define the memory hierarchy. The objectiv
     \item Global Memory \\
         Stores the full input dataset $T$ in SoA format.
     \item Constant Memory \\
-        Stores the Query $Q$. To ensure consistency and maximize cache efficiency, $Q$ is also stored in \textbf{SoA layout}. Since the constant memory is small (i.e., usually 64KB) the query cannot be too long: in our case, considering the default length of 64 described in Section~\ref{sec:input}, we have circa 1.5 KB, so it fits easily within the 64KB constant memory limit. This guarantees a huge performance benefit: we do not have to transport the query from the global memory to the local one for each thread; all threads in a warp use the same query, so we can do a single memory transaction to have this data in the local memory.
+        Stores the Query $Q$. To ensure consistency and maximize cache efficiency, $Q$ is also stored in \textbf{SoA layout}. Since the constant memory is small (i.e., usually 64KB) the query cannot be too long: in our case, considering the default length of 64 described in Section~\ref{sec:dataset}, we have circa 1.5 KB, so it fits easily within the 64KB constant memory limit. This guarantees a huge performance benefit: we do not have to transport the query from the global memory to the local one for each thread; all threads in a warp use the same query, so we can do a single memory transaction to have this data in the local memory.
     \item Shared Memory \\
         This memory is much faster than the global memory and allows threads to cooperate. We use it to perform a block-wise reduction and to implement a tiling strategy:
         \begin{itemize}

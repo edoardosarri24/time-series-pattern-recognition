@@ -9,11 +9,9 @@ SADResult SAD_distance::find_best_match(const std::vector<float>& data, const st
     size_t n_timestamps = data.size() / constants::PADDED_DIM;
     if (n_timestamps < constants::QUERY_LENGTH)
         throw std::invalid_argument("Data size is smaller than query size");
-
     // Promise to compiler of aliasing.
     const float* __restrict__ data_ptr = data.data();
     const float* __restrict__ query_ptr = query.data();
-    
     // Iterate through all timestamps.
     size_t best_index = 0;
     float min_dist = std::numeric_limits<float>::max();
