@@ -29,11 +29,11 @@
         \begin{itemize}
             \item \textbf{Vantaggio:} Località spaziale.
             \item \textbf{Accesso:} Con $Index(t,d) = buffer[t\cdot D + d]$.
-            \item \textbf{Vettorializzazione:} Compiling con flaf \texttt{-march=native} e keyword \texttt{restrict} per permettere eliminare ambiguità al compilatore.
+            \item \textbf{Vettorializzazione:} Compiling con flag \texttt{-march=native} e keyword \texttt{restrict} per permettere eliminare ambiguità al compilatore.
             \item \textbf{Padding:} Allineamento dei dati a multipli di 64 Byte:
             \begin{itemize}
-                \item 6 float per timestamp $\Rightarrow$ 24B.
-                \item Aggiunti 2 float fittizi per raggiungere 32B per timestamp.
+                \item 6 float per timestamp $\Rightarrow$ 24 Byte.
+                \item Aggiunti 2 float fittizi per raggiungere 32 Byte per timestamp.
             \end{itemize}
         \end{itemize}
     \end{block}
